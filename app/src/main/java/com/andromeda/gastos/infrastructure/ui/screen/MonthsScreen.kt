@@ -79,7 +79,7 @@ fun MonthsScreen(
                     val porMes = actual.meses
                         .mapNotNull { resumen ->
                             val mes = runCatching { YearMonth.parse(resumen.mes) }.getOrNull()
-                            if (mes == null || mes == mesActual) null else mes to resumen
+                            if (mes == null || !mes.isBefore(mesActual)) null else mes to resumen
                         }
                         .sortedByDescending { it.first }
 
