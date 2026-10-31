@@ -21,6 +21,8 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -42,9 +44,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.andromeda.gastos.domain.entity.Gasto
+import com.andromeda.gastos.domain.util.formatearMonto
 import com.andromeda.gastos.domain.util.mesDe
 import com.andromeda.gastos.domain.util.nombreMes
 import com.andromeda.gastos.infrastructure.ui.components.DialogoPassword
@@ -201,6 +205,11 @@ private fun ListaGastos(
             }
         }
 
+        TotalDelMes(
+            totalCents = gastosMes.sumOf { it.montoCents },
+            cantidad = gastosMes.size,
+        )
+
         if (gastosMes.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
@@ -222,6 +231,43 @@ private fun ListaGastos(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun TotalDelMes(
+    totalCents: Long,
+    cantidad: Int,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        ),
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = "Total gastado este mes",
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                Text(
+                    text = formatearMonto(totalCents),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            Text(
+                text = if (cantidad == 1) "1 gasto" else "$cantidad gastos",
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }
