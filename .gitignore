@@ -1,0 +1,24 @@
+*.iml
+.gradle/
+/local.properties
+.idea/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+
+# Archivos locales y secretos (no versionar)
+INSTRUCCIONES.md
+local.properties
+.env
+.env.*
+.dev.vars
+*.jks
+*.keystore
+keystore.properties
+*.pem
+*.key
+secrets.properties
+google-services.json
