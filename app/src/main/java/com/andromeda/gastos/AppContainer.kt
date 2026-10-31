@@ -52,4 +52,8 @@ class AppContainer(context: Context) {
     val exportarGastos: ExportarGastosPort = ExportarGastosUseCase(exportRemoto, exportLocal)
     val registrarGastoPorVoz: RegistrarGastoPorVozPort =
         RegistrarGastoPorVozUseCase(voz, registrarGasto)
+
+    fun detenerVoz() {
+        voz.detener()
+    }
 }

@@ -1,5 +1,7 @@
 package com.andromeda.gastos.infrastructure.ui.screen
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -37,6 +40,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -44,6 +48,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.andromeda.gastos.AppContainer
 import com.andromeda.gastos.domain.util.nombreMes
 import com.andromeda.gastos.infrastructure.ui.viewmodel.SettingsViewModel
+import com.andromeda.gastos.infrastructure.widget.VoiceWidgetProvider
 import java.time.YearMonth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,6 +62,7 @@ fun SettingsScreen(
     val vm: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(container))
     val state by vm.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    val contexto = LocalContext.current
 
     LaunchedEffect(hogarId) {
         vm.cargarRol(hogarId)
@@ -185,6 +191,31 @@ fun SettingsScreen(
                         Text("Exportar CSV")
                     }
                 }
+            }
+
+            HorizontalDivider()
+
+            Text(
+                text = "Widget de voz",
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                text = "Agrega el micrófono a tu pantalla de inicio.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Button(
+                onClick = {
+                    val manager = AppWidgetManager.getInstance(contexto)
+                    val provider = ComponentName(contexto, VoiceWidgetProvider::class.java)
+                    if (manager.isRequestPinAppWidgetSupported) {
+                        manager.requestPinAppWidget(provider, null, null)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(Icons.Default.Mic, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Agregar widget al inicio")
             }
 
             HorizontalDivider()
