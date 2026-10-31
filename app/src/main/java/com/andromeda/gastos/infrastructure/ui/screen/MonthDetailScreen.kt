@@ -17,29 +17,34 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.andromeda.gastos.domain.util.mesDe
 import com.andromeda.gastos.domain.util.nombreMes
 import com.andromeda.gastos.infrastructure.ui.components.GastoCard
 import com.andromeda.gastos.infrastructure.ui.components.PantallaCargando
-import com.andromeda.gastos.infrastructure.ui.viewmodel.HomeUiState
-import com.andromeda.gastos.infrastructure.ui.viewmodel.HomeViewModel
+import com.andromeda.gastos.infrastructure.ui.viewmodel.MonthDetailUiState
+import com.andromeda.gastos.infrastructure.ui.viewmodel.MonthDetailViewModel
 import java.time.YearMonth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MonthDetailScreen(
-    vm: HomeViewModel,
+    vm: MonthDetailViewModel,
+    hogarId: String,
     year: Int,
     month: Int,
     onVolver: () -> Unit,
 ) {
     val estado by vm.state.collectAsStateWithLifecycle()
     val mes = runCatching { YearMonth.of(year, month) }.getOrNull()
+
+    LaunchedEffect(hogarId, year, month) {
+        vm.cargar(hogarId, year, month)
+    }
 
     Scaffold(
         topBar = {
@@ -59,19 +64,17 @@ fun MonthDetailScreen(
                 .fillMaxSize(),
         ) {
             when (val actual = estado) {
-                HomeUiState.Cargando -> PantallaCargando()
-                HomeUiState.SinHogar -> Centrado("Configura tu hogar primero.")
-                is HomeUiState.Error -> Centrado(actual.mensaje)
-                is HomeUiState.Listo -> {
-                    val gastosMes = actual.gastos.filter { mesDe(it.fecha) == mes }
-                    if (gastosMes.isEmpty()) {
+                MonthDetailUiState.Cargando -> PantallaCargando()
+                is MonthDetailUiState.Error -> Centrado(actual.mensaje)
+                is MonthDetailUiState.Listo -> {
+                    if (actual.gastos.isEmpty()) {
                         Centrado("No hay gastos en este mes.")
                     } else {
                         LazyColumn(
                             contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            items(gastosMes, key = { it.id }) { gasto ->
+                            items(actual.gastos, key = { it.id }) { gasto ->
                                 GastoCard(
                                     gasto = gasto,
                                     esAdmin = false,

@@ -26,29 +26,34 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.andromeda.gastos.domain.entity.Gasto
+import com.andromeda.gastos.domain.entity.ResumenMes
 import com.andromeda.gastos.domain.util.formatearMonto
-import com.andromeda.gastos.domain.util.mesDe
 import com.andromeda.gastos.domain.util.nombreMes
 import com.andromeda.gastos.infrastructure.ui.components.PantallaCargando
-import com.andromeda.gastos.infrastructure.ui.viewmodel.HomeUiState
-import com.andromeda.gastos.infrastructure.ui.viewmodel.HomeViewModel
+import com.andromeda.gastos.infrastructure.ui.viewmodel.MonthsUiState
+import com.andromeda.gastos.infrastructure.ui.viewmodel.MonthsViewModel
 import java.time.YearMonth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MonthsScreen(
-    vm: HomeViewModel,
+    vm: MonthsViewModel,
+    hogarId: String,
     onAbrirMes: (Int, Int) -> Unit,
     onVolver: () -> Unit,
 ) {
     val estado by vm.state.collectAsStateWithLifecycle()
     val mesActual = YearMonth.now()
+
+    LaunchedEffect(hogarId) {
+        vm.cargar(hogarId)
+    }
 
     Scaffold(
         topBar = {
@@ -68,16 +73,15 @@ fun MonthsScreen(
                 .fillMaxSize(),
         ) {
             when (val actual = estado) {
-                HomeUiState.Cargando -> PantallaCargando()
-                HomeUiState.SinHogar -> Centrado("Configura tu hogar primero.")
-                is HomeUiState.Error -> Centrado(actual.mensaje)
-                is HomeUiState.Listo -> {
-                    val porMes = actual.gastos
-                        .mapNotNull { gasto -> mesDe(gasto.fecha)?.let { mes -> mes to gasto } }
-                        .filter { (mes, _) -> mes != mesActual }
-                        .groupBy({ it.first }, { it.second })
-                        .entries
-                        .sortedByDescending { it.key }
+                MonthsUiState.Cargando -> PantallaCargando()
+                is MonthsUiState.Error -> Centrado(actual.mensaje)
+                is MonthsUiState.Listo -> {
+                    val porMes = actual.meses
+                        .mapNotNull { resumen ->
+                            val mes = runCatching { YearMonth.parse(resumen.mes) }.getOrNull()
+                            if (mes == null || mes == mesActual) null else mes to resumen
+                        }
+                        .sortedByDescending { it.first }
 
                     if (porMes.isEmpty()) {
                         Centrado("No hay gastos de meses anteriores.")
@@ -86,47 +90,57 @@ fun MonthsScreen(
                             contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            items(porMes, key = { it.key.toString() }) { (mes, gastos) ->
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { onAbrirMes(mes.year, mes.monthValue) },
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(16.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Folder,
-                                            contentDescription = null,
-                                        )
-                                        Spacer(Modifier.width(12.dp))
-                                        Column(Modifier.weight(1f)) {
-                                            Text(
-                                                text = nombreMes(mes),
-                                                style = MaterialTheme.typography.titleMedium,
-                                            )
-                                            Text(
-                                                text = "${gastos.size} gastos",
-                                                style = MaterialTheme.typography.bodySmall,
-                                            )
-                                        }
-                                        Text(
-                                            text = formatearMonto(gastos.sumOf { it.montoCents }),
-                                            style = MaterialTheme.typography.titleSmall,
-                                            color = MaterialTheme.colorScheme.primary,
-                                        )
-                                        Icon(
-                                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                            contentDescription = null,
-                                        )
-                                    }
-                                }
+                            items(porMes, key = { it.first.toString() }) { (mes, resumen) ->
+                                CarpetaMes(
+                                    mes = mes,
+                                    resumen = resumen,
+                                    onAbrir = { onAbrirMes(mes.year, mes.monthValue) },
+                                )
                             }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun CarpetaMes(
+    mes: YearMonth,
+    resumen: ResumenMes,
+    onAbrir: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onAbrir),
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Default.Folder, contentDescription = null)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = nombreMes(mes),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = "${resumen.cantidad} gastos",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Text(
+                text = formatearMonto(resumen.totalCents),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+            )
         }
     }
 }

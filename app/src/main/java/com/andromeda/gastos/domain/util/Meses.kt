@@ -8,6 +8,9 @@ import java.util.Locale
 fun mesDe(fecha: String): YearMonth? =
     runCatching { YearMonth.from(LocalDate.parse(fecha)) }.getOrNull()
 
+fun rangoDelMes(mes: YearMonth): Pair<String, String> =
+    mes.atDay(1).toString() to mes.atEndOfMonth().toString()
+
 fun nombreMes(mes: YearMonth): String {
     val texto = mes.format(
         DateTimeFormatter.ofPattern("MMMM yyyy", Locale.forLanguageTag("es-CO")),

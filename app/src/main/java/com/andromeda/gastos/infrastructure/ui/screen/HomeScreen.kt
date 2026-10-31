@@ -64,7 +64,7 @@ fun HomeScreen(
     onVoz: (String) -> Unit,
     onMiembros: (String) -> Unit,
     onAjustes: (String) -> Unit,
-    onVerMeses: () -> Unit,
+    onVerMeses: (String) -> Unit,
     onLogout: () -> Unit,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -164,7 +164,7 @@ fun HomeScreen(
 @Composable
 private fun ListaGastos(
     estado: HomeUiState.Listo,
-    onVerMeses: () -> Unit,
+    onVerMeses: (String) -> Unit,
     onEditar: (Gasto) -> Unit,
     onEliminar: (Gasto) -> Unit,
 ) {
@@ -194,7 +194,7 @@ private fun ListaGastos(
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
-            TextButton(onClick = onVerMeses) {
+            TextButton(onClick = { onVerMeses(estado.hogar.id) }) {
                 Icon(Icons.Default.Folder, contentDescription = null)
                 Spacer(Modifier.width(6.dp))
                 Text("Meses anteriores")

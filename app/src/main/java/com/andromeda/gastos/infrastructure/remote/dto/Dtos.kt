@@ -51,6 +51,13 @@ data class GastoDto(
 )
 
 @Serializable
+data class ResumenMesDto(
+    val mes: String,
+    val cantidad: Int,
+    val totalCents: Long,
+)
+
+@Serializable
 data class RegistroRequest(
     val email: String,
     val password: String,

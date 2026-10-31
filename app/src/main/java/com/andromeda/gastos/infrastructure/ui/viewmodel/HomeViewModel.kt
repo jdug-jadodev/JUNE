@@ -15,11 +15,13 @@ import com.andromeda.gastos.domain.port.portin.ConsultarGastosPort
 import com.andromeda.gastos.domain.port.portin.EliminarGastoPort
 import com.andromeda.gastos.domain.port.portin.GestionarHogarPort
 import com.andromeda.gastos.domain.port.portin.GestionarMiembrosPort
+import com.andromeda.gastos.domain.util.rangoDelMes
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
+import java.time.YearMonth
 
 sealed interface HomeUiState {
     data object Cargando : HomeUiState
@@ -91,7 +93,9 @@ class HomeViewModel(
                     it.usuarioId == sesion?.usuario?.id && it.rol == Rol.ADMIN
                 }
 
-                consultarGastos.observar(hogar.id)
+                val (desde, hasta) = rangoDelMes(YearMonth.now())
+
+                consultarGastos.observar(hogar.id, desde, hasta)
                     .catch { error ->
                         _state.value = HomeUiState.Error(error.message ?: "Error de conexión")
                     }

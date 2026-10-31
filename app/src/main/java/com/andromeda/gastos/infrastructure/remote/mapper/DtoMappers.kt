@@ -3,6 +3,7 @@ package com.andromeda.gastos.infrastructure.remote.mapper
 import com.andromeda.gastos.domain.entity.Gasto
 import com.andromeda.gastos.domain.entity.Hogar
 import com.andromeda.gastos.domain.entity.Miembro
+import com.andromeda.gastos.domain.entity.ResumenMes
 import com.andromeda.gastos.domain.entity.Sesion
 import com.andromeda.gastos.domain.entity.Tokens
 import com.andromeda.gastos.domain.entity.Usuario
@@ -11,6 +12,7 @@ import com.andromeda.gastos.infrastructure.remote.dto.AuthResponseDto
 import com.andromeda.gastos.infrastructure.remote.dto.GastoDto
 import com.andromeda.gastos.infrastructure.remote.dto.HogarDto
 import com.andromeda.gastos.infrastructure.remote.dto.MiembroDto
+import com.andromeda.gastos.infrastructure.remote.dto.ResumenMesDto
 
 fun AuthResponseDto.aDominio(): Sesion = Sesion(
     usuario = Usuario(id = usuario.id, email = usuario.email, nombre = usuario.nombre),
@@ -45,4 +47,10 @@ fun GastoDto.aDominio(): Gasto = Gasto(
     creadoPorNombre = creadoPorNombre,
     createdAt = createdAt,
     updatedAt = updatedAt,
+)
+
+fun ResumenMesDto.aDominio(): ResumenMes = ResumenMes(
+    mes = mes,
+    cantidad = cantidad,
+    totalCents = totalCents,
 )

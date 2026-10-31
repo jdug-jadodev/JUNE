@@ -26,6 +26,8 @@ import com.andromeda.gastos.infrastructure.ui.viewmodel.AppViewModel
 import com.andromeda.gastos.infrastructure.ui.viewmodel.AuthState
 import com.andromeda.gastos.infrastructure.ui.viewmodel.AuthViewModel
 import com.andromeda.gastos.infrastructure.ui.viewmodel.HomeViewModel
+import com.andromeda.gastos.infrastructure.ui.viewmodel.MonthDetailViewModel
+import com.andromeda.gastos.infrastructure.ui.viewmodel.MonthsViewModel
 
 @Composable
 fun AndromedaNavHost(container: AppContainer) {
@@ -97,28 +99,43 @@ private fun MainFlow(
                 onVoz = { hogarId -> nav.navigate("add/$hogarId?autoVoz=true") },
                 onMiembros = { hogarId -> nav.navigate("members/$hogarId") },
                 onAjustes = { hogarId -> nav.navigate("settings/$hogarId") },
-                onVerMeses = { nav.navigate("months") },
+                onVerMeses = { hogarId -> nav.navigate("months/$hogarId") },
                 onLogout = onLogout,
             )
         }
-        composable("months") {
+        composable("months/{hogarId}") { entrada ->
+            val hogarId = entrada.arguments?.getString("hogarId").orEmpty()
+            val vm: MonthsViewModel = viewModel(
+                key = "months-$hogarId",
+                factory = MonthsViewModel.factory(container),
+            )
             MonthsScreen(
-                vm = homeVm,
-                onAbrirMes = { year, month -> nav.navigate("month/$year/$month") },
+                vm = vm,
+                hogarId = hogarId,
+                onAbrirMes = { year, month ->
+                    nav.navigate("month/$hogarId/$year/$month")
+                },
                 onVolver = { nav.popBackStack() },
             )
         }
         composable(
-            route = "month/{year}/{month}",
+            route = "month/{hogarId}/{year}/{month}",
             arguments = listOf(
+                navArgument("hogarId") { type = NavType.StringType },
                 navArgument("year") { type = NavType.IntType },
                 navArgument("month") { type = NavType.IntType },
             ),
         ) { entrada ->
+            val hogarId = entrada.arguments?.getString("hogarId").orEmpty()
             val year = entrada.arguments?.getInt("year") ?: 0
             val month = entrada.arguments?.getInt("month") ?: 1
+            val vm: MonthDetailViewModel = viewModel(
+                key = "month-$hogarId-$year-$month",
+                factory = MonthDetailViewModel.factory(container),
+            )
             MonthDetailScreen(
-                vm = homeVm,
+                vm = vm,
+                hogarId = hogarId,
                 year = year,
                 month = month,
                 onVolver = { nav.popBackStack() },

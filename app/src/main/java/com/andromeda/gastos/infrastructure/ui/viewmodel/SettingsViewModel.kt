@@ -57,9 +57,8 @@ class SettingsViewModel(
     fun cargarMeses(hogarId: String) {
         viewModelScope.launch {
             val meses = runCatching {
-                consultarGastos.listar(hogarId)
-                    .map { it.fecha.substring(0, 7) }
-                    .distinct()
+                consultarGastos.listarMeses(hogarId)
+                    .map { it.mes }
                     .sortedDescending()
             }.getOrDefault(emptyList())
 

@@ -1,9 +1,11 @@
 package com.andromeda.gastos.infrastructure.remote
 
 import com.andromeda.gastos.domain.entity.Gasto
+import com.andromeda.gastos.domain.entity.ResumenMes
 import com.andromeda.gastos.domain.port.portout.GastoRepositorioPort
 import com.andromeda.gastos.infrastructure.remote.dto.GastoDto
 import com.andromeda.gastos.infrastructure.remote.dto.GastoRequest
+import com.andromeda.gastos.infrastructure.remote.dto.ResumenMesDto
 import com.andromeda.gastos.infrastructure.remote.mapper.aDominio
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
@@ -25,11 +27,15 @@ class GastoApiAdapter(
     private val api: ApiClient,
 ) : GastoRepositorioPort {
 
-    override fun observar(hogarId: String): Flow<List<Gasto>> = flow {
+    override fun observar(
+        hogarId: String,
+        desde: String?,
+        hasta: String?,
+    ): Flow<List<Gasto>> = flow {
         var primeraVez = true
         while (true) {
             try {
-                emit(listar(hogarId))
+                emit(listar(hogarId, desde, hasta))
                 primeraVez = false
             } catch (error: Exception) {
                 if (primeraVez) throw error
@@ -38,10 +44,19 @@ class GastoApiAdapter(
         }
     }.flowOn(Dispatchers.IO)
 
-    override suspend fun listar(hogarId: String): List<Gasto> =
-        api.http.get(api.url("/households/$hogarId/expenses")) {
+    override suspend fun listar(
+        hogarId: String,
+        desde: String?,
+        hasta: String?,
+    ): List<Gasto> =
+        api.http.get(api.url("/households/$hogarId/expenses${consulta(desde, hasta)}")) {
             autorizacion(api)
         }.decodificar<List<GastoDto>>().map { it.aDominio() }
+
+    override suspend fun listarMeses(hogarId: String): List<ResumenMes> =
+        api.http.get(api.url("/households/$hogarId/expenses/months")) {
+            autorizacion(api)
+        }.decodificar<List<ResumenMesDto>>().map { it.aDominio() }
 
     override suspend fun crear(
         hogarId: String,
@@ -75,5 +90,13 @@ class GastoApiAdapter(
             autorizacion(api)
             header("X-Admin-Password", adminPassword)
         }.verificar()
+    }
+
+    private fun consulta(desde: String?, hasta: String?): String {
+        val partes = buildList {
+            desde?.let { add("desde=$it") }
+            hasta?.let { add("hasta=$it") }
+        }
+        return if (partes.isEmpty()) "" else "?" + partes.joinToString("&")
     }
 }
