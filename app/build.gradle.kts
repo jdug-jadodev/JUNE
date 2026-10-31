@@ -18,9 +18,11 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        // Para emulador: "http://10.0.2.2:8787"
-        // Para dispositivo físico con `adb reverse tcp:8787 tcp:8787`: "http://127.0.0.1:8787"
-        buildConfigField("String", "API_BASE_URL", "\"http://127.0.0.1:8787\"")
+        // Producción por defecto. Para desarrollo local:
+        // ./gradlew ... -PapiBaseUrl=http://127.0.0.1:8787 (con `adb reverse tcp:8787 tcp:8787`)
+        val apiBaseUrl = (project.findProperty("apiBaseUrl") as String?)
+            ?: "https://andromeda-backend.jhonnathan-dev.workers.dev"
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 
     buildFeatures {
