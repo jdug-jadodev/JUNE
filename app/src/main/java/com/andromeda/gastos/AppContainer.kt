@@ -20,6 +20,7 @@ import com.andromeda.gastos.domain.port.portin.GestionarMiembrosPort
 import com.andromeda.gastos.domain.port.portin.RegistrarGastoPorVozPort
 import com.andromeda.gastos.domain.port.portin.RegistrarGastoPort
 import com.andromeda.gastos.infrastructure.export.CsvShareAdapter
+import com.andromeda.gastos.infrastructure.local.CacheDatos
 import com.andromeda.gastos.infrastructure.local.SesionDataStore
 import com.andromeda.gastos.infrastructure.remote.ApiClient
 import com.andromeda.gastos.infrastructure.remote.AuthApiAdapter
@@ -33,16 +34,17 @@ class AppContainer(context: Context) {
 
     private val sesionLocal = SesionDataStore(context)
     private val apiClient = ApiClient(BuildConfig.API_BASE_URL, sesionLocal)
+    private val cache = CacheDatos()
 
     private val authRemoto = AuthApiAdapter(apiClient)
-    private val hogarRepo = HogarApiAdapter(apiClient)
-    private val miembroRepo = MiembroApiAdapter(apiClient)
+    private val hogarRepo = HogarApiAdapter(apiClient, cache)
+    private val miembroRepo = MiembroApiAdapter(apiClient, cache)
     private val gastoRepo = GastoApiAdapter(apiClient)
     private val exportRemoto = ExportacionApiAdapter(apiClient)
     private val exportLocal = CsvShareAdapter(context)
     private val voz = AndroidVozAdapter(context)
 
-    val autenticacion: AutenticacionPort = AutenticacionUseCase(authRemoto, sesionLocal)
+    val autenticacion: AutenticacionPort = AutenticacionUseCase(authRemoto, sesionLocal, cache)
     val gestionarHogar: GestionarHogarPort = GestionarHogarUseCase(hogarRepo)
     val gestionarMiembros: GestionarMiembrosPort = GestionarMiembrosUseCase(miembroRepo)
     val registrarGasto: RegistrarGastoPort = RegistrarGastoUseCase(gastoRepo)

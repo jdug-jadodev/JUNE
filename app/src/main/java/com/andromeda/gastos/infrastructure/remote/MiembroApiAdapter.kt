@@ -4,6 +4,7 @@ import com.andromeda.gastos.domain.entity.Hogar
 import com.andromeda.gastos.domain.entity.Miembro
 import com.andromeda.gastos.domain.enums.Acceso
 import com.andromeda.gastos.domain.port.portout.MiembroRepositorioPort
+import com.andromeda.gastos.infrastructure.local.CacheDatos
 import com.andromeda.gastos.infrastructure.remote.dto.CambiarAccesoRequest
 import com.andromeda.gastos.infrastructure.remote.dto.HogarDto
 import com.andromeda.gastos.infrastructure.remote.dto.MiembroDto
@@ -19,24 +20,37 @@ import io.ktor.http.contentType
 
 class MiembroApiAdapter(
     private val api: ApiClient,
+    private val cache: CacheDatos,
 ) : MiembroRepositorioPort {
 
-    override suspend fun listar(hogarId: String): List<Miembro> =
-        api.http.get(api.url("/households/$hogarId/members")) {
+    override suspend fun listar(hogarId: String): List<Miembro> {
+        cache.miembros(hogarId)?.let { return it }
+
+        val miembros = api.http.get(api.url("/households/$hogarId/members")) {
             autorizacion(api)
         }.decodificar<List<MiembroDto>>().map { it.aDominio() }
 
-    override suspend fun unirse(inviteCode: String): Hogar =
-        api.http.post(api.url("/households/join")) {
+        cache.guardarMiembros(hogarId, miembros)
+        return miembros
+    }
+
+    override suspend fun unirse(inviteCode: String): Hogar {
+        val hogar = api.http.post(api.url("/households/join")) {
             autorizacion(api)
             contentType(ContentType.Application.Json)
             setBody(UnirseRequest(inviteCode = inviteCode))
         }.decodificar<HogarDto>().aDominio()
 
+        cache.invalidarTodo()
+        return hogar
+    }
+
     override suspend fun eliminar(hogarId: String, miembroId: String) {
         api.http.delete(api.url("/households/$hogarId/members/$miembroId")) {
             autorizacion(api)
         }.verificar()
+
+        cache.invalidarMiembros(hogarId)
     }
 
     override suspend fun cambiarAcceso(hogarId: String, miembroId: String, acceso: Acceso) {
@@ -45,5 +59,7 @@ class MiembroApiAdapter(
             contentType(ContentType.Application.Json)
             setBody(CambiarAccesoRequest(acceso = acceso.name))
         }.verificar()
+
+        cache.invalidarMiembros(hogarId)
     }
 }
