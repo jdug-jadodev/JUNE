@@ -85,6 +85,10 @@ fun HomeScreen(
         vm.cargar()
     }
 
+    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) {
+        vm.detener()
+    }
+
     var gastoEditar by remember { mutableStateOf<Gasto?>(null) }
     var gastoEliminar by remember { mutableStateOf<Gasto?>(null) }
 

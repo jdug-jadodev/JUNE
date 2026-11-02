@@ -17,6 +17,7 @@ import com.andromeda.gastos.domain.port.portin.EliminarGastoPort
 import com.andromeda.gastos.domain.port.portin.GestionarHogarPort
 import com.andromeda.gastos.domain.port.portin.GestionarMiembrosPort
 import com.andromeda.gastos.domain.util.cicloActual
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -59,9 +60,12 @@ class HomeViewModel(
     fun cargar() {
         activo = true
         polling?.cancel()
+        val mostrarCargando = _state.value !is HomeUiState.Listo
         viewModelScope.launch {
             if (!activo) return@launch
-            _state.value = HomeUiState.Cargando
+            if (mostrarCargando) {
+                _state.value = HomeUiState.Cargando
+            }
             try {
                 val hogares = gestionarHogar.listar()
                 if (!activo) return@launch
@@ -70,6 +74,8 @@ class HomeViewModel(
                 } else {
                     observar(hogares.first())
                 }
+            } catch (error: CancellationException) {
+                throw error
             } catch (error: Exception) {
                 _state.value = HomeUiState.Error(error.message ?: "No se pudieron cargar los datos")
             }
@@ -100,6 +106,7 @@ class HomeViewModel(
 
                 consultarGastos.observar(hogar.id, ciclo.inicioIso, ciclo.finIso)
                     .catch { error ->
+                        if (error is CancellationException) throw error
                         _state.value = HomeUiState.Error(error.message ?: "Error de conexión")
                     }
                     .collect { gastos ->
@@ -112,6 +119,8 @@ class HomeViewModel(
                             )
                         }
                     }
+            } catch (error: CancellationException) {
+                throw error
             } catch (error: Exception) {
                 _state.value = HomeUiState.Error(error.message ?: "Error de conexión")
             }
