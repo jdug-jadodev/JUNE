@@ -26,10 +26,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.andromeda.gastos.domain.entity.Sesion
+import com.andromeda.gastos.infrastructure.ui.components.CampoPassword
 import com.andromeda.gastos.infrastructure.ui.components.MensajeError
 import com.andromeda.gastos.infrastructure.ui.viewmodel.AuthViewModel
 
@@ -83,13 +83,10 @@ fun RegisterScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
+            CampoPassword(
                 value = state.password,
                 onValueChange = vm::onPassword,
-                label = { Text("Contraseña (mín. 8)") },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                label = "Contraseña (mín. 8)",
                 modifier = Modifier.fillMaxWidth(),
             )
 

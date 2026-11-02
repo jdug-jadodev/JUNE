@@ -43,7 +43,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -51,6 +50,7 @@ import com.andromeda.gastos.AppContainer
 import com.andromeda.gastos.domain.util.Ciclo
 import com.andromeda.gastos.domain.util.cicloActual
 import com.andromeda.gastos.domain.util.etiquetaCiclo
+import com.andromeda.gastos.infrastructure.ui.components.CampoPassword
 import com.andromeda.gastos.infrastructure.ui.viewmodel.SettingsViewModel
 import com.andromeda.gastos.infrastructure.widget.VoiceWidgetProvider
 import java.time.LocalDate
@@ -162,12 +162,10 @@ fun SettingsScreen(
                     text = "Solo quien la conozca podrá editar y eliminar gastos.",
                     style = MaterialTheme.typography.bodySmall,
                 )
-                OutlinedTextField(
+                CampoPassword(
                     value = state.password,
                     onValueChange = vm::onPassword,
-                    label = { Text("Nueva contraseña (mín. 8)") },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
+                    label = "Nueva contraseña (mín. 8)",
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Button(
