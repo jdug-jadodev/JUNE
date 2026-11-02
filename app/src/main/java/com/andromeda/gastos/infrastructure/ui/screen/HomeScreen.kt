@@ -182,12 +182,6 @@ private fun ListaGastos(
     val gastosMes = estado.gastos
 
     Column(Modifier.fillMaxSize()) {
-        Text(
-            text = estado.hogar.nombre,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-        )
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
