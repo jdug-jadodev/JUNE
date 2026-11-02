@@ -96,7 +96,7 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Andrómeda") },
+                title = {},
                 actions = {
                     if (hogarId != null) {
                         IconButton(onClick = { onMiembros(hogarId) }) {
