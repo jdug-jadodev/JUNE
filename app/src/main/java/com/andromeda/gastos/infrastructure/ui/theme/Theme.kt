@@ -7,8 +7,13 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val Azul = Color(0xFF3A5AFF)
-private val AzulClaro = Color(0xFF9DB2FF)
+private val Teal = Color(0xFF0F766E)
+private val TealClaro = Color(0xFF2ED3C0)
+private val TealContenedor = Color(0xFFD7F0EC)
+private val SobreTealContenedor = Color(0xFF063C38)
+private val Navy = Color(0xFF0B1F3A)
+private val Dorado = Color(0xFFE9B949)
+private val FondoClaro = Color(0xFFFBF9F5)
 private val FondoOscuro = Color(0xFF0E1116)
 private val SuperficieOscura = Color(0xFF171B22)
 
@@ -18,19 +23,25 @@ fun AndromedaTheme(content: @Composable () -> Unit) {
 
     val esquema = if (oscuro) {
         darkColorScheme(
-            primary = AzulClaro,
-            onPrimary = Color(0xFF00105C),
-            primaryContainer = Color(0xFF1F3478),
-            onPrimaryContainer = Color(0xFFDDE1FF),
+            primary = TealClaro,
+            onPrimary = Color(0xFF00201C),
+            primaryContainer = Color(0xFF0B4F49),
+            onPrimaryContainer = Color(0xFFC9F5EF),
+            secondary = Dorado,
+            onSecondary = Navy,
             background = FondoOscuro,
             surface = SuperficieOscura,
         )
     } else {
         lightColorScheme(
-            primary = Azul,
+            primary = Teal,
             onPrimary = Color.White,
-            primaryContainer = Color(0xFFDDE1FF),
-            onPrimaryContainer = Color(0xFF00105C),
+            primaryContainer = TealContenedor,
+            onPrimaryContainer = SobreTealContenedor,
+            secondary = Dorado,
+            onSecondary = Navy,
+            background = FondoClaro,
+            surface = Color.White,
         )
     }
 

@@ -11,6 +11,6 @@ class ExportarGastosUseCase(
 
     override suspend fun ejecutar(hogarId: String, ciclos: List<String>?) {
         val csv = remoto.descargarCsv(hogarId, ciclos)
-        local.compartirCsv("gastos_andromeda.csv", csv)
+        local.compartirCsv("gastos_cauce.csv", csv)
     }
 }

@@ -30,6 +30,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.andromeda.gastos.domain.entity.Sesion
+import com.andromeda.gastos.infrastructure.ui.components.MarcaCauce
 import com.andromeda.gastos.infrastructure.ui.components.MensajeError
 import com.andromeda.gastos.infrastructure.ui.viewmodel.AuthViewModel
 
@@ -59,16 +60,7 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                text = "Andrómeda",
-                style = MaterialTheme.typography.displaySmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = "Registra los gastos de tu familia",
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            MarcaCauce()
             Spacer(Modifier.height(32.dp))
 
             OutlinedTextField(

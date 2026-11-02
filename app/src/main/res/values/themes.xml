@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Andromeda" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Andromeda" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/cauce_fondo</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/cauce_fondo</item>
+    </style>
 
     <style name="Theme.Andromeda.VoiceDialog" parent="android:Theme.Material.Light.Dialog">
         <item name="android:windowIsFloating">true</item>

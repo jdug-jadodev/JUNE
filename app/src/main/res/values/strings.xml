@@ -1,6 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Andrómeda</string>
-    <string name="widget_label">June · Registrar</string>
+    <string name="app_name">Cauce</string>
+    <string name="app_tagline">Finanzas de familia</string>
+    <string name="widget_label">Cauce · Registrar</string>
     <string name="widget_action">Registrar</string>
-    <string name="widget_description">Registra un gasto por voz con June</string>
+    <string name="widget_description">Registra un gasto por voz con Cauce</string>
 </resources>

@@ -33,16 +33,7 @@ fun SplashScreen() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Text(
-                text = "Andrómeda",
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = "Gastos en familia",
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            MarcaCauce(tamanoIcono = 88.dp)
             Spacer(Modifier.height(24.dp))
             CircularProgressIndicator()
         }
