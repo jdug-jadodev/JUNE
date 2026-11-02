@@ -60,6 +60,7 @@ import java.time.LocalDate
 fun SettingsScreen(
     container: AppContainer,
     hogarId: String,
+    onSeguridad: () -> Unit,
     onVolver: () -> Unit,
     onLogout: () -> Unit,
 ) {
@@ -188,6 +189,15 @@ fun SettingsScreen(
                     text = "Solo el administrador del hogar puede cambiar la contraseña.",
                     style = MaterialTheme.typography.bodySmall,
                 )
+            }
+
+            HorizontalDivider()
+
+            Button(
+                onClick = onSeguridad,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Seguridad de la cuenta")
             }
 
             HorizontalDivider()

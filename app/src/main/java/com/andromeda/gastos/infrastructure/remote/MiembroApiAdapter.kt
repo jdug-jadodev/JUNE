@@ -3,11 +3,14 @@ package com.andromeda.gastos.infrastructure.remote
 import com.andromeda.gastos.domain.entity.Hogar
 import com.andromeda.gastos.domain.entity.Miembro
 import com.andromeda.gastos.domain.enums.Acceso
+import com.andromeda.gastos.domain.enums.Rol
 import com.andromeda.gastos.domain.port.portout.MiembroRepositorioPort
 import com.andromeda.gastos.infrastructure.local.CacheDatos
 import com.andromeda.gastos.infrastructure.remote.dto.CambiarAccesoRequest
+import com.andromeda.gastos.infrastructure.remote.dto.CambiarRolRequest
 import com.andromeda.gastos.infrastructure.remote.dto.HogarDto
 import com.andromeda.gastos.infrastructure.remote.dto.MiembroDto
+import com.andromeda.gastos.infrastructure.remote.dto.ResetPasswordAdminResponse
 import com.andromeda.gastos.infrastructure.remote.dto.UnirseRequest
 import com.andromeda.gastos.infrastructure.remote.mapper.aDominio
 import io.ktor.client.request.delete
@@ -58,6 +61,21 @@ class MiembroApiAdapter(
             autorizacion(api)
             contentType(ContentType.Application.Json)
             setBody(CambiarAccesoRequest(acceso = acceso.name))
+        }.verificar()
+
+        cache.invalidarMiembros(hogarId)
+    }
+
+    override suspend fun restablecerPassword(hogarId: String, miembroId: String): String =
+        api.http.post(api.url("/households/$hogarId/members/$miembroId/reset-password")) {
+            autorizacion(api)
+        }.decodificar<ResetPasswordAdminResponse>().passwordTemporal
+
+    override suspend fun cambiarRol(hogarId: String, miembroId: String, rol: Rol) {
+        api.http.patch(api.url("/households/$hogarId/members/$miembroId/role")) {
+            autorizacion(api)
+            contentType(ContentType.Application.Json)
+            setBody(CambiarRolRequest(rol = rol.name))
         }.verificar()
 
         cache.invalidarMiembros(hogarId)

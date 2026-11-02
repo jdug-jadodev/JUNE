@@ -3,6 +3,7 @@ package com.andromeda.gastos.application.usecase
 import com.andromeda.gastos.domain.entity.Hogar
 import com.andromeda.gastos.domain.entity.Miembro
 import com.andromeda.gastos.domain.enums.Acceso
+import com.andromeda.gastos.domain.enums.Rol
 import com.andromeda.gastos.domain.port.portin.GestionarMiembrosPort
 import com.andromeda.gastos.domain.port.portout.MiembroRepositorioPort
 
@@ -23,4 +24,10 @@ class GestionarMiembrosUseCase(
 
     override suspend fun cambiarAcceso(hogarId: String, miembroId: String, acceso: Acceso) =
         repositorio.cambiarAcceso(hogarId, miembroId, acceso)
+
+    override suspend fun restablecerPassword(hogarId: String, miembroId: String): String =
+        repositorio.restablecerPassword(hogarId, miembroId)
+
+    override suspend fun cambiarRol(hogarId: String, miembroId: String, rol: Rol) =
+        repositorio.cambiarRol(hogarId, miembroId, rol)
 }

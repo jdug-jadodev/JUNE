@@ -111,6 +111,63 @@ data class CambiarAccesoRequest(
 )
 
 @Serializable
+data class CambiarRolRequest(
+    val rol: String,
+)
+
+@Serializable
+data class ResetPasswordAdminResponse(
+    val passwordTemporal: String,
+)
+
+@Serializable
+data class SeguridadRequest(
+    val pregunta: String,
+    val respuesta: String,
+)
+
+@Serializable
+data class EstadoSeguridadDto(
+    val pregunta: String? = null,
+    val tieneCodigo: Boolean = false,
+)
+
+@Serializable
+data class PreguntaRequest(
+    val email: String,
+)
+
+@Serializable
+data class PreguntaResponse(
+    val pregunta: String? = null,
+)
+
+@Serializable
+data class ResetPreguntaRequest(
+    val email: String,
+    val respuesta: String,
+    val passwordNueva: String,
+)
+
+@Serializable
+data class ResetCodigoRequest(
+    val email: String,
+    val codigo: String,
+    val passwordNueva: String,
+)
+
+@Serializable
+data class CambiarPasswordRequest(
+    val passwordActual: String,
+    val passwordNueva: String,
+)
+
+@Serializable
+data class CodigoRecuperacionResponse(
+    val codigo: String,
+)
+
+@Serializable
 data class GastoRequest(
     val producto: String,
     val montoCents: Long,

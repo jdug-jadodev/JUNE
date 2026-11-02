@@ -15,12 +15,14 @@ import com.andromeda.gastos.AppContainer
 import com.andromeda.gastos.domain.entity.Sesion
 import com.andromeda.gastos.infrastructure.ui.components.SplashScreen
 import com.andromeda.gastos.infrastructure.ui.screen.AddExpenseScreen
+import com.andromeda.gastos.infrastructure.ui.screen.ForgotPasswordScreen
 import com.andromeda.gastos.infrastructure.ui.screen.HomeScreen
 import com.andromeda.gastos.infrastructure.ui.screen.LoginScreen
 import com.andromeda.gastos.infrastructure.ui.screen.MembersScreen
 import com.andromeda.gastos.infrastructure.ui.screen.MonthDetailScreen
 import com.andromeda.gastos.infrastructure.ui.screen.MonthsScreen
 import com.andromeda.gastos.infrastructure.ui.screen.RegisterScreen
+import com.andromeda.gastos.infrastructure.ui.screen.SecurityScreen
 import com.andromeda.gastos.infrastructure.ui.screen.SettingsScreen
 import com.andromeda.gastos.infrastructure.ui.viewmodel.AppViewModel
 import com.andromeda.gastos.infrastructure.ui.viewmodel.AuthState
@@ -58,6 +60,7 @@ private fun AuthFlow(
             LoginScreen(
                 vm = vm,
                 onIrARegistro = { nav.navigate("register") },
+                onIrARecuperar = { nav.navigate("forgot") },
                 onSesion = onSesion,
             )
         }
@@ -66,6 +69,12 @@ private fun AuthFlow(
                 vm = vm,
                 onVolver = { nav.popBackStack() },
                 onSesion = onSesion,
+            )
+        }
+        composable("forgot") {
+            ForgotPasswordScreen(
+                container = container,
+                onVolver = { nav.popBackStack() },
             )
         }
     }
@@ -173,8 +182,15 @@ private fun MainFlow(
             SettingsScreen(
                 container = container,
                 hogarId = hogarId,
+                onSeguridad = { nav.navigate("security/$hogarId") },
                 onVolver = { nav.popBackStack() },
                 onLogout = onLogout,
+            )
+        }
+        composable("security/{hogarId}") {
+            SecurityScreen(
+                container = container,
+                onVolver = { nav.popBackStack() },
             )
         }
     }

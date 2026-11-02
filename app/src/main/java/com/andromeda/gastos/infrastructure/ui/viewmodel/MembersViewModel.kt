@@ -38,6 +38,9 @@ class MembersViewModel(
     private val _mensaje = MutableStateFlow<String?>(null)
     val mensaje = _mensaje.asStateFlow()
 
+    private val _passwordTemporal = MutableStateFlow<String?>(null)
+    val passwordTemporal = _passwordTemporal.asStateFlow()
+
     fun cargar(hogarId: String) {
         viewModelScope.launch {
             _state.value = MembersUiState(cargando = true)
@@ -91,6 +94,36 @@ class MembersViewModel(
                 _mensaje.value = error.message ?: "No se pudo cambiar el permiso"
             }
         }
+    }
+
+    fun restablecerPassword(hogarId: String, miembroId: String) {
+        viewModelScope.launch {
+            try {
+                _passwordTemporal.value = gestionarMiembros.restablecerPassword(hogarId, miembroId)
+            } catch (error: Exception) {
+                _mensaje.value = error.message ?: "No se pudo restablecer la contraseña"
+            }
+        }
+    }
+
+    fun cambiarRol(hogarId: String, miembroId: String, rol: Rol) {
+        viewModelScope.launch {
+            try {
+                gestionarMiembros.cambiarRol(hogarId, miembroId, rol)
+                _mensaje.value = if (rol == Rol.ADMIN) {
+                    "Ahora es administrador"
+                } else {
+                    "Ahora es miembro"
+                }
+                cargar(hogarId)
+            } catch (error: Exception) {
+                _mensaje.value = error.message ?: "No se pudo cambiar el rol"
+            }
+        }
+    }
+
+    fun limpiarPasswordTemporal() {
+        _passwordTemporal.value = null
     }
 
     fun limpiarMensaje() {

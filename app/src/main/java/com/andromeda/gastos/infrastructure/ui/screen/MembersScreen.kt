@@ -1,6 +1,7 @@
 package com.andromeda.gastos.infrastructure.ui.screen
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,9 +14,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -59,10 +64,12 @@ fun MembersScreen(
     val vm: MembersViewModel = viewModel(factory = MembersViewModel.factory(container))
     val state by vm.state.collectAsStateWithLifecycle()
     val mensaje by vm.mensaje.collectAsStateWithLifecycle()
+    val passwordTemporal by vm.passwordTemporal.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val portapapeles = LocalClipboardManager.current
 
     var miembroEliminar by remember { mutableStateOf<Miembro?>(null) }
+    var menuAbierto by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(hogarId) {
         vm.cargar(hogarId)
@@ -171,8 +178,64 @@ fun MembersScreen(
                                         )
                                     }
                                     if (state.esAdmin && miembro.usuarioId != state.miUsuarioId) {
-                                        IconButton(onClick = { miembroEliminar = miembro }) {
-                                            Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                                        Box {
+                                            IconButton(
+                                                onClick = { menuAbierto = miembro.id },
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.MoreVert,
+                                                    contentDescription = "Más opciones",
+                                                )
+                                            }
+                                            DropdownMenu(
+                                                expanded = menuAbierto == miembro.id,
+                                                onDismissRequest = { menuAbierto = null },
+                                            ) {
+                                                DropdownMenuItem(
+                                                    text = { Text("Restablecer contraseña") },
+                                                    onClick = {
+                                                        vm.restablecerPassword(hogarId, miembro.id)
+                                                        menuAbierto = null
+                                                    },
+                                                )
+                                                if (
+                                                    miembro.usuarioId != state.miUsuarioId &&
+                                                    miembro.usuarioId != state.hogar?.ownerId
+                                                ) {
+                                                    DropdownMenuItem(
+                                                        text = {
+                                                            Text(
+                                                                if (esAdministrador) {
+                                                                    "Quitar administrador"
+                                                                } else {
+                                                                    "Hacer administrador"
+                                                                },
+                                                            )
+                                                        },
+                                                        onClick = {
+                                                            vm.cambiarRol(
+                                                                hogarId,
+                                                                miembro.id,
+                                                                if (esAdministrador) {
+                                                                    Rol.MIEMBRO
+                                                                } else {
+                                                                    Rol.ADMIN
+                                                                },
+                                                            )
+                                                            menuAbierto = null
+                                                        },
+                                                    )
+                                                }
+                                                if (miembro.usuarioId != state.miUsuarioId) {
+                                                    DropdownMenuItem(
+                                                        text = { Text("Eliminar") },
+                                                        onClick = {
+                                                            miembroEliminar = miembro
+                                                            menuAbierto = null
+                                                        },
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -204,6 +267,41 @@ fun MembersScreen(
             dismissButton = {
                 TextButton(onClick = { miembroEliminar = null }) {
                     Text("Cancelar")
+                }
+            },
+        )
+    }
+
+    passwordTemporal?.let { temporal ->
+        AlertDialog(
+            onDismissRequest = vm::limpiarPasswordTemporal,
+            title = { Text("Contraseña temporal") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Compártela con la persona. Deberá cambiarla al entrar.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Text(
+                        text = temporal,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontFamily = FontFamily.Monospace,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        portapapeles.setText(AnnotatedString(temporal))
+                        vm.limpiarPasswordTemporal()
+                    },
+                ) {
+                    Text("Copiar y cerrar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = vm::limpiarPasswordTemporal) {
+                    Text("Cerrar")
                 }
             },
         )

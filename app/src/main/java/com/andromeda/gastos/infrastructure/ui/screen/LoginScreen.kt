@@ -39,6 +39,7 @@ import com.andromeda.gastos.infrastructure.ui.viewmodel.AuthViewModel
 fun LoginScreen(
     vm: AuthViewModel,
     onIrARegistro: () -> Unit,
+    onIrARecuperar: () -> Unit,
     onSesion: (Sesion) -> Unit,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -99,6 +100,10 @@ fun LoginScreen(
                 } else {
                     Text("Entrar")
                 }
+            }
+
+            TextButton(onClick = onIrARecuperar) {
+                Text("¿Olvidaste tu contraseña?")
             }
 
             TextButton(onClick = onIrARegistro) {
