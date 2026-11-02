@@ -1,5 +1,6 @@
 package com.andromeda.gastos.infrastructure.ui.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -44,11 +46,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.andromeda.gastos.R
 import com.andromeda.gastos.domain.entity.Gasto
 import com.andromeda.gastos.domain.util.cicloActual
 import com.andromeda.gastos.domain.util.etiquetaCiclo
@@ -96,7 +100,13 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {},
+                title = {
+                    Image(
+                        painter = painterResource(R.drawable.ic_cauce_symbol),
+                        contentDescription = "Cauce",
+                        modifier = Modifier.size(42.dp),
+                    )
+                },
                 actions = {
                     if (hogarId != null) {
                         IconButton(onClick = { onMiembros(hogarId) }) {
@@ -114,7 +124,7 @@ fun HomeScreen(
         },
         snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
-            if (hogarId != null) {
+            if (hogarId != null && (state as? HomeUiState.Listo)?.puedeEscribir == true) {
                 Column(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -203,6 +213,15 @@ private fun ListaGastos(
                 Spacer(Modifier.width(6.dp))
                 Text("Ciclos anteriores")
             }
+        }
+
+        if (!estado.puedeEscribir) {
+            Text(
+                text = "Solo lectura · el administrador puede darte escritura",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
         }
 
         TotalDelMes(

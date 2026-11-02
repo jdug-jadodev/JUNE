@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.andromeda.gastos.AppContainer
 import com.andromeda.gastos.domain.entity.Hogar
 import com.andromeda.gastos.domain.entity.Miembro
+import com.andromeda.gastos.domain.enums.Acceso
 import com.andromeda.gastos.domain.enums.Rol
 import com.andromeda.gastos.domain.port.portin.AutenticacionPort
 import com.andromeda.gastos.domain.port.portin.GestionarHogarPort
@@ -20,6 +21,7 @@ data class MembersUiState(
     val hogar: Hogar? = null,
     val miembros: List<Miembro> = emptyList(),
     val esAdmin: Boolean = false,
+    val miUsuarioId: String? = null,
     val cargando: Boolean = true,
     val error: String? = null,
 )
@@ -41,15 +43,17 @@ class MembersViewModel(
             _state.value = MembersUiState(cargando = true)
             try {
                 val sesion = autenticacion.sesionActual()
+                val miUsuarioId = sesion?.usuario?.id
                 val hogar = gestionarHogar.obtener(hogarId)
                 val miembros = gestionarMiembros.listar(hogarId)
                 val esAdmin = miembros.any {
-                    it.usuarioId == sesion?.usuario?.id && it.rol == Rol.ADMIN
+                    it.usuarioId == miUsuarioId && it.rol == Rol.ADMIN
                 }
                 _state.value = MembersUiState(
                     hogar = hogar,
                     miembros = miembros,
                     esAdmin = esAdmin,
+                    miUsuarioId = miUsuarioId,
                     cargando = false,
                 )
             } catch (error: Exception) {
@@ -69,6 +73,22 @@ class MembersViewModel(
                 cargar(hogarId)
             } catch (error: Exception) {
                 _mensaje.value = error.message ?: "No se pudo eliminar el miembro"
+            }
+        }
+    }
+
+    fun cambiarAcceso(hogarId: String, miembroId: String, acceso: Acceso) {
+        viewModelScope.launch {
+            try {
+                gestionarMiembros.cambiarAcceso(hogarId, miembroId, acceso)
+                _mensaje.value = if (acceso == Acceso.LECTURA) {
+                    "Miembro en solo lectura"
+                } else {
+                    "Miembro puede escribir"
+                }
+                cargar(hogarId)
+            } catch (error: Exception) {
+                _mensaje.value = error.message ?: "No se pudo cambiar el permiso"
             }
         }
     }

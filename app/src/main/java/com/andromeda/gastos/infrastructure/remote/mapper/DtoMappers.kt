@@ -8,6 +8,7 @@ import com.andromeda.gastos.domain.entity.ResumenMes
 import com.andromeda.gastos.domain.entity.Sesion
 import com.andromeda.gastos.domain.entity.Tokens
 import com.andromeda.gastos.domain.entity.Usuario
+import com.andromeda.gastos.domain.enums.Acceso
 import com.andromeda.gastos.domain.enums.Rol
 import com.andromeda.gastos.infrastructure.remote.dto.AuthResponseDto
 import com.andromeda.gastos.infrastructure.remote.dto.GastoDto
@@ -37,6 +38,7 @@ fun MiembroDto.aDominio(): Miembro = Miembro(
     nombre = nombre.orEmpty(),
     email = email.orEmpty(),
     rol = runCatching { Rol.valueOf(rol) }.getOrDefault(Rol.MIEMBRO),
+    acceso = runCatching { Acceso.valueOf(acceso) }.getOrDefault(Acceso.ESCRITURA),
     joinedAt = joinedAt,
 )
 

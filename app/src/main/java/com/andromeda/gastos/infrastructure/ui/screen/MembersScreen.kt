@@ -2,6 +2,7 @@ package com.andromeda.gastos.infrastructure.ui.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -32,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
@@ -40,6 +43,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.andromeda.gastos.AppContainer
 import com.andromeda.gastos.domain.entity.Miembro
+import com.andromeda.gastos.domain.enums.Acceso
+import com.andromeda.gastos.domain.enums.Rol
 import com.andromeda.gastos.infrastructure.ui.components.MensajeError
 import com.andromeda.gastos.infrastructure.ui.components.PantallaCargando
 import com.andromeda.gastos.infrastructure.ui.viewmodel.MembersViewModel
@@ -73,7 +78,7 @@ fun MembersScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Miembros") },
+                title = { Text(state.hogar?.nombre ?: "Miembros") },
                 navigationIcon = {
                     IconButton(onClick = onVolver) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
@@ -120,20 +125,55 @@ fun MembersScreen(
 
                 Spacer(Modifier.height(16.dp))
                 Text("Familia", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = if (state.esAdmin) {
+                        "Activa o desactiva la escritura de cada miembro."
+                    } else {
+                        "El administrador controla quién puede registrar gastos."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                )
 
                 LazyColumn(Modifier.weight(1f)) {
                     items(state.miembros, key = { it.id }) { miembro ->
+                        val esAdministrador = miembro.rol == Rol.ADMIN
+                        val puedeEscribir = esAdministrador || miembro.acceso == Acceso.ESCRITURA
+
                         ListItem(
                             headlineContent = {
                                 Text(miembro.nombre.ifBlank { miembro.email })
                             },
                             supportingContent = {
-                                Text("${miembro.email} · ${miembro.rol.name.lowercase()}")
+                                Text(
+                                    "${miembro.email} · " + when {
+                                        esAdministrador -> "Administrador"
+                                        puedeEscribir -> "Puede escribir"
+                                        else -> "Solo lectura"
+                                    },
+                                )
                             },
                             trailingContent = {
-                                if (state.esAdmin) {
-                                    IconButton(onClick = { miembroEliminar = miembro }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    if (state.esAdmin && !esAdministrador) {
+                                        Switch(
+                                            checked = puedeEscribir,
+                                            onCheckedChange = { activo ->
+                                                vm.cambiarAcceso(
+                                                    hogarId = hogarId,
+                                                    miembroId = miembro.id,
+                                                    acceso = if (activo) {
+                                                        Acceso.ESCRITURA
+                                                    } else {
+                                                        Acceso.LECTURA
+                                                    },
+                                                )
+                                            },
+                                        )
+                                    }
+                                    if (state.esAdmin && miembro.usuarioId != state.miUsuarioId) {
+                                        IconButton(onClick = { miembroEliminar = miembro }) {
+                                            Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                                        }
                                     }
                                 }
                             },

@@ -2,13 +2,16 @@ package com.andromeda.gastos.infrastructure.remote
 
 import com.andromeda.gastos.domain.entity.Hogar
 import com.andromeda.gastos.domain.entity.Miembro
+import com.andromeda.gastos.domain.enums.Acceso
 import com.andromeda.gastos.domain.port.portout.MiembroRepositorioPort
+import com.andromeda.gastos.infrastructure.remote.dto.CambiarAccesoRequest
 import com.andromeda.gastos.infrastructure.remote.dto.HogarDto
 import com.andromeda.gastos.infrastructure.remote.dto.MiembroDto
 import com.andromeda.gastos.infrastructure.remote.dto.UnirseRequest
 import com.andromeda.gastos.infrastructure.remote.mapper.aDominio
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -33,6 +36,14 @@ class MiembroApiAdapter(
     override suspend fun eliminar(hogarId: String, miembroId: String) {
         api.http.delete(api.url("/households/$hogarId/members/$miembroId")) {
             autorizacion(api)
+        }.verificar()
+    }
+
+    override suspend fun cambiarAcceso(hogarId: String, miembroId: String, acceso: Acceso) {
+        api.http.patch(api.url("/households/$hogarId/members/$miembroId/access")) {
+            autorizacion(api)
+            contentType(ContentType.Application.Json)
+            setBody(CambiarAccesoRequest(acceso = acceso.name))
         }.verificar()
     }
 }

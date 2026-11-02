@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.andromeda.gastos.AppContainer
 import com.andromeda.gastos.domain.entity.Gasto
 import com.andromeda.gastos.domain.entity.Hogar
+import com.andromeda.gastos.domain.enums.Acceso
 import com.andromeda.gastos.domain.enums.Rol
 import com.andromeda.gastos.domain.port.portin.ActualizarGastoPort
 import com.andromeda.gastos.domain.port.portin.AutenticacionPort
@@ -29,6 +30,7 @@ sealed interface HomeUiState {
         val hogar: Hogar,
         val gastos: List<Gasto>,
         val esAdmin: Boolean,
+        val puedeEscribir: Boolean,
     ) : HomeUiState
 
     data class Error(val mensaje: String) : HomeUiState
@@ -88,9 +90,11 @@ class HomeViewModel(
             try {
                 val sesion = autenticacion.sesionActual()
                 val miembros = gestionarMiembros.listar(hogar.id)
-                val esAdmin = miembros.any {
-                    it.usuarioId == sesion?.usuario?.id && it.rol == Rol.ADMIN
+                val miembroActual = miembros.firstOrNull {
+                    it.usuarioId == sesion?.usuario?.id
                 }
+                val esAdmin = miembroActual?.rol == Rol.ADMIN
+                val puedeEscribir = esAdmin || miembroActual?.acceso == Acceso.ESCRITURA
 
                 val ciclo = cicloActual(hogar.cutoffDay)
 
@@ -100,7 +104,12 @@ class HomeViewModel(
                     }
                     .collect { gastos ->
                         if (activo) {
-                            _state.value = HomeUiState.Listo(hogar, gastos, esAdmin)
+                            _state.value = HomeUiState.Listo(
+                                hogar = hogar,
+                                gastos = gastos,
+                                esAdmin = esAdmin,
+                                puedeEscribir = puedeEscribir,
+                            )
                         }
                     }
             } catch (error: Exception) {

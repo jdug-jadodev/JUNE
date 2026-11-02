@@ -35,6 +35,7 @@ data class MiembroDto(
     val nombre: String? = null,
     val email: String? = null,
     val rol: String,
+    val acceso: String = "ESCRITURA",
     val joinedAt: String = "",
 )
 
@@ -102,6 +103,11 @@ data class ConfigurarPasswordRequest(
 @Serializable
 data class ConfigurarCorteRequest(
     val cutoffDay: Int,
+)
+
+@Serializable
+data class CambiarAccesoRequest(
+    val acceso: String,
 )
 
 @Serializable
