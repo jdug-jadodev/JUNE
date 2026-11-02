@@ -21,4 +21,9 @@ class GestionarHogarUseCase(
         require(password.length >= 8) { "La contraseña debe tener al menos 8 caracteres" }
         repositorio.configurarPassword(hogarId, password)
     }
+
+    override suspend fun configurarCorte(hogarId: String, cutoffDay: Int): Hogar {
+        require(cutoffDay in 1..31) { "El día de corte debe estar entre 1 y 31" }
+        return repositorio.configurarCorte(hogarId, cutoffDay)
+    }
 }

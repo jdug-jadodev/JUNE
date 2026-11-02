@@ -23,33 +23,36 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.andromeda.gastos.domain.util.nombreMes
+import com.andromeda.gastos.domain.util.Ciclo
+import com.andromeda.gastos.domain.util.etiquetaCiclo
 import com.andromeda.gastos.infrastructure.ui.components.GastoCard
 import com.andromeda.gastos.infrastructure.ui.components.PantallaCargando
 import com.andromeda.gastos.infrastructure.ui.viewmodel.MonthDetailUiState
 import com.andromeda.gastos.infrastructure.ui.viewmodel.MonthDetailViewModel
-import java.time.YearMonth
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MonthDetailScreen(
     vm: MonthDetailViewModel,
     hogarId: String,
-    year: Int,
-    month: Int,
+    inicio: String,
+    fin: String,
     onVolver: () -> Unit,
 ) {
     val estado by vm.state.collectAsStateWithLifecycle()
-    val mes = runCatching { YearMonth.of(year, month) }.getOrNull()
+    val ciclo = runCatching {
+        Ciclo(inicio = LocalDate.parse(inicio), fin = LocalDate.parse(fin))
+    }.getOrNull()
 
-    LaunchedEffect(hogarId, year, month) {
-        vm.cargar(hogarId, year, month)
+    LaunchedEffect(hogarId, inicio, fin) {
+        vm.cargar(hogarId, inicio, fin)
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(mes?.let { nombreMes(it) } ?: "Mes") },
+                title = { Text(ciclo?.let { etiquetaCiclo(it) } ?: "Ciclo") },
                 navigationIcon = {
                     IconButton(onClick = onVolver) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
@@ -68,7 +71,7 @@ fun MonthDetailScreen(
                 is MonthDetailUiState.Error -> Centrado(actual.mensaje)
                 is MonthDetailUiState.Listo -> {
                     if (actual.gastos.isEmpty()) {
-                        Centrado("No hay gastos en este mes.")
+                        Centrado("No hay gastos en este ciclo.")
                     } else {
                         LazyColumn(
                             contentPadding = PaddingValues(16.dp),

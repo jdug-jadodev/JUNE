@@ -9,8 +9,8 @@ class ExportarGastosUseCase(
     private val local: ExportacionLocalPort,
 ) : ExportarGastosPort {
 
-    override suspend fun ejecutar(hogarId: String, meses: List<String>?) {
-        val csv = remoto.descargarCsv(hogarId, meses)
+    override suspend fun ejecutar(hogarId: String, ciclos: List<String>?) {
+        val csv = remoto.descargarCsv(hogarId, ciclos)
         local.compartirCsv("gastos_andromeda.csv", csv)
     }
 }

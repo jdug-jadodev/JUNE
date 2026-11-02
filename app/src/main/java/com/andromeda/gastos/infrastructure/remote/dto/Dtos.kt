@@ -23,6 +23,7 @@ data class HogarDto(
     val nombre: String,
     val ownerId: String,
     val inviteCode: String,
+    val cutoffDay: Int = 1,
     val createdAt: String = "",
 )
 
@@ -58,6 +59,14 @@ data class ResumenMesDto(
 )
 
 @Serializable
+data class ResumenCicloDto(
+    val inicio: String,
+    val fin: String,
+    val cantidad: Int,
+    val totalCents: Long,
+)
+
+@Serializable
 data class RegistroRequest(
     val email: String,
     val password: String,
@@ -88,6 +97,11 @@ data class UnirseRequest(
 @Serializable
 data class ConfigurarPasswordRequest(
     val password: String,
+)
+
+@Serializable
+data class ConfigurarCorteRequest(
+    val cutoffDay: Int,
 )
 
 @Serializable

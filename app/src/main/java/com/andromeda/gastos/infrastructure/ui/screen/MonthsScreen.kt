@@ -32,24 +32,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.andromeda.gastos.domain.entity.ResumenMes
+import com.andromeda.gastos.domain.entity.ResumenCiclo
+import com.andromeda.gastos.domain.util.Ciclo
+import com.andromeda.gastos.domain.util.cicloActual
+import com.andromeda.gastos.domain.util.etiquetaCiclo
 import com.andromeda.gastos.domain.util.formatearMonto
-import com.andromeda.gastos.domain.util.nombreMes
 import com.andromeda.gastos.infrastructure.ui.components.PantallaCargando
 import com.andromeda.gastos.infrastructure.ui.viewmodel.MonthsUiState
 import com.andromeda.gastos.infrastructure.ui.viewmodel.MonthsViewModel
-import java.time.YearMonth
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MonthsScreen(
     vm: MonthsViewModel,
     hogarId: String,
-    onAbrirMes: (Int, Int) -> Unit,
+    onAbrirCiclo: (String, String) -> Unit,
     onVolver: () -> Unit,
 ) {
     val estado by vm.state.collectAsStateWithLifecycle()
-    val mesActual = YearMonth.now()
 
     LaunchedEffect(hogarId) {
         vm.cargar(hogarId)
@@ -58,7 +59,7 @@ fun MonthsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Meses anteriores") },
+                title = { Text("Ciclos anteriores") },
                 navigationIcon = {
                     IconButton(onClick = onVolver) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
@@ -76,25 +77,24 @@ fun MonthsScreen(
                 MonthsUiState.Cargando -> PantallaCargando()
                 is MonthsUiState.Error -> Centrado(actual.mensaje)
                 is MonthsUiState.Listo -> {
-                    val porMes = actual.meses
-                        .mapNotNull { resumen ->
-                            val mes = runCatching { YearMonth.parse(resumen.mes) }.getOrNull()
-                            if (mes == null || !mes.isBefore(mesActual)) null else mes to resumen
-                        }
-                        .sortedByDescending { it.first }
+                    val cicloEnCurso = cicloActual(actual.cutoffDay)
+                    val anteriores = actual.ciclos
+                        .mapNotNull { resumen -> aCiclo(resumen)?.let { it to resumen } }
+                        .filter { (ciclo, _) -> ciclo.inicio.isBefore(cicloEnCurso.inicio) }
+                        .sortedByDescending { (ciclo, _) -> ciclo.inicio }
 
-                    if (porMes.isEmpty()) {
-                        Centrado("No hay gastos de meses anteriores.")
+                    if (anteriores.isEmpty()) {
+                        Centrado("No hay ciclos anteriores.")
                     } else {
                         LazyColumn(
                             contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            items(porMes, key = { it.first.toString() }) { (mes, resumen) ->
-                                CarpetaMes(
-                                    mes = mes,
+                            items(anteriores, key = { it.first.inicioIso }) { (ciclo, resumen) ->
+                                CarpetaCiclo(
+                                    ciclo = ciclo,
                                     resumen = resumen,
-                                    onAbrir = { onAbrirMes(mes.year, mes.monthValue) },
+                                    onAbrir = { onAbrirCiclo(ciclo.inicioIso, ciclo.finIso) },
                                 )
                             }
                         }
@@ -105,10 +105,17 @@ fun MonthsScreen(
     }
 }
 
+private fun aCiclo(resumen: ResumenCiclo): Ciclo? = runCatching {
+    Ciclo(
+        inicio = LocalDate.parse(resumen.inicio),
+        fin = LocalDate.parse(resumen.fin),
+    )
+}.getOrNull()
+
 @Composable
-private fun CarpetaMes(
-    mes: YearMonth,
-    resumen: ResumenMes,
+private fun CarpetaCiclo(
+    ciclo: Ciclo,
+    resumen: ResumenCiclo,
     onAbrir: () -> Unit,
 ) {
     Card(
@@ -124,7 +131,7 @@ private fun CarpetaMes(
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = nombreMes(mes),
+                    text = etiquetaCiclo(ciclo),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(

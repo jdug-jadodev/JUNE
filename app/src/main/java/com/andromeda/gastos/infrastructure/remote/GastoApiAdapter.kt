@@ -1,10 +1,12 @@
 package com.andromeda.gastos.infrastructure.remote
 
 import com.andromeda.gastos.domain.entity.Gasto
+import com.andromeda.gastos.domain.entity.ResumenCiclo
 import com.andromeda.gastos.domain.entity.ResumenMes
 import com.andromeda.gastos.domain.port.portout.GastoRepositorioPort
 import com.andromeda.gastos.infrastructure.remote.dto.GastoDto
 import com.andromeda.gastos.infrastructure.remote.dto.GastoRequest
+import com.andromeda.gastos.infrastructure.remote.dto.ResumenCicloDto
 import com.andromeda.gastos.infrastructure.remote.dto.ResumenMesDto
 import com.andromeda.gastos.infrastructure.remote.mapper.aDominio
 import io.ktor.client.request.delete
@@ -57,6 +59,11 @@ class GastoApiAdapter(
         api.http.get(api.url("/households/$hogarId/expenses/months")) {
             autorizacion(api)
         }.decodificar<List<ResumenMesDto>>().map { it.aDominio() }
+
+    override suspend fun listarCiclos(hogarId: String): List<ResumenCiclo> =
+        api.http.get(api.url("/households/$hogarId/cycles")) {
+            autorizacion(api)
+        }.decodificar<List<ResumenCicloDto>>().map { it.aDominio() }
 
     override suspend fun crear(
         hogarId: String,

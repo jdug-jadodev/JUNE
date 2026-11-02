@@ -1,6 +1,7 @@
 package com.andromeda.gastos.domain.port.portout
 
 import com.andromeda.gastos.domain.entity.Gasto
+import com.andromeda.gastos.domain.entity.ResumenCiclo
 import com.andromeda.gastos.domain.entity.ResumenMes
 import kotlinx.coroutines.flow.Flow
 
@@ -18,6 +19,8 @@ interface GastoRepositorioPort {
     ): List<Gasto>
 
     suspend fun listarMeses(hogarId: String): List<ResumenMes>
+
+    suspend fun listarCiclos(hogarId: String): List<ResumenCiclo>
 
     suspend fun crear(hogarId: String, producto: String, montoCents: Long, fecha: String): Gasto
     suspend fun actualizar(

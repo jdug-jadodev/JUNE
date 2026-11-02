@@ -46,10 +46,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.andromeda.gastos.domain.entity.Gasto
+import com.andromeda.gastos.domain.util.cicloActual
+import com.andromeda.gastos.domain.util.etiquetaCiclo
 import com.andromeda.gastos.domain.util.formatearMonto
-import com.andromeda.gastos.domain.util.mesDe
 import com.andromeda.gastos.domain.util.nombreMes
 import com.andromeda.gastos.infrastructure.ui.components.DialogoPassword
 import com.andromeda.gastos.infrastructure.ui.components.EditarGastoDialog
@@ -58,7 +61,6 @@ import com.andromeda.gastos.infrastructure.ui.components.MensajeError
 import com.andromeda.gastos.infrastructure.ui.components.PantallaCargando
 import com.andromeda.gastos.infrastructure.ui.viewmodel.HomeUiState
 import com.andromeda.gastos.infrastructure.ui.viewmodel.HomeViewModel
-import java.time.YearMonth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,6 +76,10 @@ fun HomeScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     val mensaje by vm.mensaje.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        vm.cargar()
+    }
 
     var gastoEditar by remember { mutableStateOf<Gasto?>(null) }
     var gastoEliminar by remember { mutableStateOf<Gasto?>(null) }
@@ -172,8 +178,8 @@ private fun ListaGastos(
     onEditar: (Gasto) -> Unit,
     onEliminar: (Gasto) -> Unit,
 ) {
-    val mesActual = YearMonth.now()
-    val gastosMes = estado.gastos.filter { mesDe(it.fecha) == mesActual }
+    val ciclo = cicloActual(estado.hogar.cutoffDay)
+    val gastosMes = estado.gastos
 
     Column(Modifier.fillMaxSize()) {
         Text(
@@ -190,18 +196,18 @@ private fun ListaGastos(
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = "Mes actual",
+                    text = "Ciclo actual",
                     style = MaterialTheme.typography.labelSmall,
                 )
                 Text(
-                    text = nombreMes(mesActual),
+                    text = etiquetaCiclo(ciclo),
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
             TextButton(onClick = { onVerMeses(estado.hogar.id) }) {
                 Icon(Icons.Default.Folder, contentDescription = null)
                 Spacer(Modifier.width(6.dp))
-                Text("Meses anteriores")
+                Text("Ciclos anteriores")
             }
         }
 
@@ -213,7 +219,7 @@ private fun ListaGastos(
         if (gastosMes.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = "Aún no hay gastos este mes.",
+                    text = "Aún no hay gastos en este ciclo.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -255,7 +261,7 @@ private fun TotalDelMes(
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = "Total gastado este mes",
+                    text = "Total gastado en este ciclo",
                     style = MaterialTheme.typography.labelMedium,
                 )
                 Text(

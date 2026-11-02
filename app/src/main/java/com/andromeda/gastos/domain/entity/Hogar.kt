@@ -5,5 +5,6 @@ data class Hogar(
     val nombre: String,
     val ownerId: String,
     val inviteCode: String,
+    val cutoffDay: Int = 1,
     val createdAt: String,
 )

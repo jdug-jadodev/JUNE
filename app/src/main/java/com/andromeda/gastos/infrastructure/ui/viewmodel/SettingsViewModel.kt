@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.andromeda.gastos.AppContainer
+import com.andromeda.gastos.domain.entity.ResumenCiclo
 import com.andromeda.gastos.domain.enums.Rol
 import com.andromeda.gastos.domain.port.portin.AutenticacionPort
 import com.andromeda.gastos.domain.port.portin.ConsultarGastosPort
@@ -24,10 +25,13 @@ data class SettingsUiState(
     val error: String? = null,
     val esAdmin: Boolean = false,
     val cargandoRol: Boolean = true,
-    val meses: List<String> = emptyList(),
-    val mesesSeleccionados: Set<String> = emptySet(),
+    val cutoffDay: Int = 1,
+    val corteTexto: String = "1",
+    val guardandoCorte: Boolean = false,
+    val ciclos: List<ResumenCiclo> = emptyList(),
+    val ciclosSeleccionados: Set<String> = emptySet(),
     val todosSeleccionados: Boolean = false,
-    val cargandoMeses: Boolean = true,
+    val cargandoCiclos: Boolean = true,
 )
 
 class SettingsViewModel(
@@ -54,29 +58,96 @@ class SettingsViewModel(
         }
     }
 
-    fun cargarMeses(hogarId: String) {
+    fun cargarCorte(hogarId: String) {
         viewModelScope.launch {
-            val meses = runCatching {
-                consultarGastos.listarMeses(hogarId)
-                    .map { it.mes }
-                    .sortedDescending()
-            }.getOrDefault(emptyList())
-
-            _state.update { it.copy(meses = meses, cargandoMeses = false) }
+            runCatching { gestionarHogar.obtener(hogarId) }
+                .onSuccess { hogar ->
+                    _state.update {
+                        it.copy(
+                            cutoffDay = hogar.cutoffDay,
+                            corteTexto = hogar.cutoffDay.toString(),
+                        )
+                    }
+                }
         }
     }
 
-    fun toggleMes(mes: String) {
+    fun cargarCiclos(hogarId: String) {
+        viewModelScope.launch {
+            val ciclos = runCatching {
+                consultarGastos.listarCiclos(hogarId)
+            }.getOrDefault(emptyList())
+
+            _state.update {
+                it.copy(
+                    ciclos = ciclos,
+                    ciclosSeleccionados = emptySet(),
+                    todosSeleccionados = false,
+                    cargandoCiclos = false,
+                )
+            }
+        }
+    }
+
+    fun onCorte(valor: String) = _state.update {
+        it.copy(
+            corteTexto = valor.filter { caracter -> caracter.isDigit() }.take(2),
+            error = null,
+            mensaje = null,
+        )
+    }
+
+    fun guardarCorte(hogarId: String) {
+        if (!_state.value.esAdmin) {
+            _state.update {
+                it.copy(error = "Solo el administrador puede cambiar el ciclo")
+            }
+            return
+        }
+
+        val dia = _state.value.corteTexto.toIntOrNull()
+        if (dia == null || dia !in 1..31) {
+            _state.update { it.copy(error = "El día de corte debe estar entre 1 y 31") }
+            return
+        }
+
+        viewModelScope.launch {
+            _state.update { it.copy(guardandoCorte = true, error = null, mensaje = null) }
+            runCatching { gestionarHogar.configurarCorte(hogarId, dia) }
+                .onSuccess { hogar ->
+                    _state.update {
+                        it.copy(
+                            guardandoCorte = false,
+                            cutoffDay = hogar.cutoffDay,
+                            corteTexto = hogar.cutoffDay.toString(),
+                            mensaje = "Ciclo actualizado",
+                        )
+                    }
+                    cargarCiclos(hogarId)
+                }
+                .onFailure { error ->
+                    _state.update {
+                        it.copy(
+                            guardandoCorte = false,
+                            error = error.message ?: "No se pudo actualizar el ciclo",
+                        )
+                    }
+                }
+        }
+    }
+
+    fun toggleCiclo(inicio: String) {
         _state.update { actual ->
-            val seleccion = if (mes in actual.mesesSeleccionados) {
-                actual.mesesSeleccionados - mes
+            val seleccion = if (inicio in actual.ciclosSeleccionados) {
+                actual.ciclosSeleccionados - inicio
             } else {
-                actual.mesesSeleccionados + mes
+                actual.ciclosSeleccionados + inicio
             }
 
             actual.copy(
-                mesesSeleccionados = seleccion,
-                todosSeleccionados = actual.meses.isNotEmpty() && seleccion.size == actual.meses.size,
+                ciclosSeleccionados = seleccion,
+                todosSeleccionados = actual.ciclos.isNotEmpty() &&
+                    seleccion.size == actual.ciclos.size,
                 error = null,
                 mensaje = null,
             )
@@ -86,7 +157,11 @@ class SettingsViewModel(
     fun seleccionarTodos(seleccionado: Boolean) {
         _state.update {
             it.copy(
-                mesesSeleccionados = if (seleccionado) it.meses.toSet() else emptySet(),
+                ciclosSeleccionados = if (seleccionado) {
+                    it.ciclos.map { ciclo -> ciclo.inicio }.toSet()
+                } else {
+                    emptySet()
+                },
                 todosSeleccionados = seleccionado,
                 error = null,
                 mensaje = null,
@@ -132,16 +207,16 @@ class SettingsViewModel(
 
     fun exportar(hogarId: String) {
         val actual = _state.value
-        if (!actual.todosSeleccionados && actual.mesesSeleccionados.isEmpty()) {
-            _state.update { it.copy(error = "Selecciona al menos un mes") }
+        if (!actual.todosSeleccionados && actual.ciclosSeleccionados.isEmpty()) {
+            _state.update { it.copy(error = "Selecciona al menos un ciclo") }
             return
         }
 
-        val meses = if (actual.todosSeleccionados) null else actual.mesesSeleccionados.toList()
+        val ciclos = if (actual.todosSeleccionados) null else actual.ciclosSeleccionados.toList()
 
         viewModelScope.launch {
             _state.update { it.copy(guardando = true, error = null, mensaje = null) }
-            runCatching { exportarGastos.ejecutar(hogarId, meses) }
+            runCatching { exportarGastos.ejecutar(hogarId, ciclos) }
                 .onSuccess {
                     _state.update {
                         it.copy(guardando = false, mensaje = "CSV listo para compartir")

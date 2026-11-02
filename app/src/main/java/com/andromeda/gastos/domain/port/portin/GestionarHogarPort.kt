@@ -7,4 +7,5 @@ interface GestionarHogarPort {
     suspend fun listar(): List<Hogar>
     suspend fun obtener(hogarId: String): Hogar
     suspend fun configurarPassword(hogarId: String, password: String)
+    suspend fun configurarCorte(hogarId: String, cutoffDay: Int): Hogar
 }

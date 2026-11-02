@@ -2,11 +2,13 @@ package com.andromeda.gastos.infrastructure.remote
 
 import com.andromeda.gastos.domain.entity.Hogar
 import com.andromeda.gastos.domain.port.portout.HogarRepositorioPort
+import com.andromeda.gastos.infrastructure.remote.dto.ConfigurarCorteRequest
 import com.andromeda.gastos.infrastructure.remote.dto.ConfigurarPasswordRequest
 import com.andromeda.gastos.infrastructure.remote.dto.CrearHogarRequest
 import com.andromeda.gastos.infrastructure.remote.dto.HogarDto
 import com.andromeda.gastos.infrastructure.remote.mapper.aDominio
 import io.ktor.client.request.get
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -40,4 +42,11 @@ class HogarApiAdapter(
             setBody(ConfigurarPasswordRequest(password = password))
         }.verificar()
     }
+
+    override suspend fun configurarCorte(hogarId: String, cutoffDay: Int): Hogar =
+        api.http.patch(api.url("/households/$hogarId/cutoff")) {
+            autorizacion(api)
+            contentType(ContentType.Application.Json)
+            setBody(ConfigurarCorteRequest(cutoffDay = cutoffDay))
+        }.decodificar<HogarDto>().aDominio()
 }

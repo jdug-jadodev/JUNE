@@ -8,11 +8,9 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.andromeda.gastos.AppContainer
 import com.andromeda.gastos.domain.entity.Gasto
 import com.andromeda.gastos.domain.port.portin.ConsultarGastosPort
-import com.andromeda.gastos.domain.util.rangoDelMes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.time.YearMonth
 
 sealed interface MonthDetailUiState {
     data object Cargando : MonthDetailUiState
@@ -27,20 +25,18 @@ class MonthDetailViewModel(
     private val _state = MutableStateFlow<MonthDetailUiState>(MonthDetailUiState.Cargando)
     val state = _state.asStateFlow()
 
-    fun cargar(hogarId: String, year: Int, month: Int) {
+    fun cargar(hogarId: String, inicio: String, fin: String) {
         viewModelScope.launch {
             _state.value = MonthDetailUiState.Cargando
-            runCatching {
-                val mes = YearMonth.of(year, month)
-                val (desde, hasta) = rangoDelMes(mes)
-                consultarGastos.listar(hogarId, desde, hasta)
-            }.onSuccess {
-                _state.value = MonthDetailUiState.Listo(it)
-            }.onFailure {
-                _state.value = MonthDetailUiState.Error(
-                    it.message ?: "No se pudo cargar el mes",
-                )
-            }
+            runCatching { consultarGastos.listar(hogarId, inicio, fin) }
+                .onSuccess {
+                    _state.value = MonthDetailUiState.Listo(it)
+                }
+                .onFailure {
+                    _state.value = MonthDetailUiState.Error(
+                        it.message ?: "No se pudo cargar el ciclo",
+                    )
+                }
         }
     }
 

@@ -112,32 +112,32 @@ private fun MainFlow(
             MonthsScreen(
                 vm = vm,
                 hogarId = hogarId,
-                onAbrirMes = { year, month ->
-                    nav.navigate("month/$hogarId/$year/$month")
+                onAbrirCiclo = { inicio, fin ->
+                    nav.navigate("cycle/$hogarId/$inicio/$fin")
                 },
                 onVolver = { nav.popBackStack() },
             )
         }
         composable(
-            route = "month/{hogarId}/{year}/{month}",
+            route = "cycle/{hogarId}/{inicio}/{fin}",
             arguments = listOf(
                 navArgument("hogarId") { type = NavType.StringType },
-                navArgument("year") { type = NavType.IntType },
-                navArgument("month") { type = NavType.IntType },
+                navArgument("inicio") { type = NavType.StringType },
+                navArgument("fin") { type = NavType.StringType },
             ),
         ) { entrada ->
             val hogarId = entrada.arguments?.getString("hogarId").orEmpty()
-            val year = entrada.arguments?.getInt("year") ?: 0
-            val month = entrada.arguments?.getInt("month") ?: 1
+            val inicio = entrada.arguments?.getString("inicio").orEmpty()
+            val fin = entrada.arguments?.getString("fin").orEmpty()
             val vm: MonthDetailViewModel = viewModel(
-                key = "month-$hogarId-$year-$month",
+                key = "cycle-$hogarId-$inicio-$fin",
                 factory = MonthDetailViewModel.factory(container),
             )
             MonthDetailScreen(
                 vm = vm,
                 hogarId = hogarId,
-                year = year,
-                month = month,
+                inicio = inicio,
+                fin = fin,
                 onVolver = { nav.popBackStack() },
             )
         }

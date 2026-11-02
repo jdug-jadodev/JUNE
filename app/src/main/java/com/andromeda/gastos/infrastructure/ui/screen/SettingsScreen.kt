@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -41,15 +42,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.andromeda.gastos.AppContainer
-import com.andromeda.gastos.domain.util.nombreMes
+import com.andromeda.gastos.domain.util.Ciclo
+import com.andromeda.gastos.domain.util.cicloActual
+import com.andromeda.gastos.domain.util.etiquetaCiclo
 import com.andromeda.gastos.infrastructure.ui.viewmodel.SettingsViewModel
 import com.andromeda.gastos.infrastructure.widget.VoiceWidgetProvider
-import java.time.YearMonth
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,7 +70,8 @@ fun SettingsScreen(
 
     LaunchedEffect(hogarId) {
         vm.cargarRol(hogarId)
-        vm.cargarMeses(hogarId)
+        vm.cargarCorte(hogarId)
+        vm.cargarCiclos(hogarId)
     }
 
     LaunchedEffect(state.mensaje, state.error) {
@@ -98,6 +103,56 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            Text(
+                text = "Ciclo de gastos",
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                text = "Elige el día en que empieza tu ciclo. Por ejemplo, 29 significa " +
+                    "del 29 de un mes al 28 del siguiente.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+
+            val diaValido = state.corteTexto.toIntOrNull()?.let { it in 1..31 } == true
+            val diaPrevio = state.corteTexto.toIntOrNull()?.takeIf { it in 1..31 } ?: state.cutoffDay
+            Text(
+                text = "Ciclo actual: ${etiquetaCiclo(cicloActual(diaPrevio))}",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+
+            if (state.esAdmin) {
+                OutlinedTextField(
+                    value = state.corteTexto,
+                    onValueChange = vm::onCorte,
+                    label = { Text("Día de corte (1–31)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Button(
+                    onClick = { vm.guardarCorte(hogarId) },
+                    enabled = diaValido && !state.guardandoCorte,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (state.guardandoCorte) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    } else {
+                        Text("Guardar ciclo")
+                    }
+                }
+            } else if (!state.cargandoRol) {
+                Text(
+                    text = "Solo el administrador del hogar puede cambiar el día de corte.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+
+            HorizontalDivider()
+
             if (state.esAdmin) {
                 Text(
                     text = "Contraseña de administrador",
@@ -144,11 +199,11 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.titleMedium,
             )
             Text(
-                text = "Selecciona los meses que quieres exportar o marca todos.",
+                text = "Selecciona los ciclos que quieres exportar o marca todos.",
                 style = MaterialTheme.typography.bodySmall,
             )
 
-            if (state.cargandoMeses) {
+            if (state.cargandoCiclos) {
                 CircularProgressIndicator(Modifier.size(24.dp))
             } else {
                 Row(
@@ -159,26 +214,33 @@ fun SettingsScreen(
                         checked = state.todosSeleccionados,
                         onCheckedChange = { vm.seleccionarTodos(it) },
                     )
-                    Text("Todos los meses")
+                    Text("Todos los ciclos")
                 }
 
-                state.meses.forEach { mes ->
+                state.ciclos.forEach { resumen ->
+                    val ciclo = runCatching {
+                        Ciclo(
+                            inicio = LocalDate.parse(resumen.inicio),
+                            fin = LocalDate.parse(resumen.fin),
+                        )
+                    }.getOrNull()
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Checkbox(
-                            checked = mes in state.mesesSeleccionados,
-                            onCheckedChange = { vm.toggleMes(mes) },
+                            checked = resumen.inicio in state.ciclosSeleccionados,
+                            onCheckedChange = { vm.toggleCiclo(resumen.inicio) },
                         )
-                        Text(nombreMes(YearMonth.parse(mes)))
+                        Text(ciclo?.let { etiquetaCiclo(it) } ?: resumen.inicio)
                     }
                 }
 
                 Button(
                     onClick = { vm.exportar(hogarId) },
                     enabled = !state.guardando &&
-                        (state.todosSeleccionados || state.mesesSeleccionados.isNotEmpty()),
+                        (state.todosSeleccionados || state.ciclosSeleccionados.isNotEmpty()),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     if (state.guardando) {
