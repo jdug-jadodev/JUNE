@@ -13,11 +13,20 @@ data class CategoriaAnalisis(
     val nombre: String,
     val totalCents: Long,
     val cantidad: Int,
+    val ejemplos: List<String> = emptyList(),
 )
 
 data class GustoAnalisis(
     val conceptoId: String,
     val nombre: String,
+    val cantidad: Int,
+    val totalCents: Long,
+    val ejemplos: List<String> = emptyList(),
+)
+
+data class SinClasificarAnalisis(
+    val termino: String,
+    val ejemplos: List<String>,
     val cantidad: Int,
     val totalCents: Long,
 )
@@ -38,7 +47,6 @@ data class ProyeccionAnalisis(
     val diasTranscurridos: Int,
     val diasTotales: Int,
     val ritmoDiarioCents: Long,
-    val estimadoFinCicloCents: Long,
     val ritmoAnteriorCents: Long,
     val variableCents: Long,
     val fijoCents: Long,
@@ -49,6 +57,7 @@ data class Analisis(
     val resumen: ResumenAnalisis,
     val categorias: List<CategoriaAnalisis>,
     val gustos: List<GustoAnalisis>,
+    val sinClasificar: List<SinClasificarAnalisis>,
     val carrera: List<CarreraCiclo>,
     val proyeccion: ProyeccionAnalisis,
 )

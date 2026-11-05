@@ -1,6 +1,7 @@
 package com.andromeda.gastos.application.usecase
 
 import com.andromeda.gastos.domain.entity.Analisis
+import com.andromeda.gastos.domain.entity.Concepto
 import com.andromeda.gastos.domain.port.portin.ConsultarAnalisisPort
 import com.andromeda.gastos.domain.port.portout.AnalisisRepositorioPort
 
@@ -10,4 +11,6 @@ class ConsultarAnalisisUseCase(
 
     override suspend fun analizar(hogarId: String, ciclos: List<String>?): Analisis =
         repositorio.analizar(hogarId, ciclos)
+
+    override suspend fun conceptos(): List<Concepto> = repositorio.conceptos()
 }

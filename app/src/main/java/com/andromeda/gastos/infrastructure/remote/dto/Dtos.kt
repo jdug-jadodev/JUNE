@@ -195,6 +195,7 @@ data class CategoriaAnalisisDto(
     val nombre: String,
     val totalCents: Long,
     val cantidad: Int,
+    val ejemplos: List<String> = emptyList(),
 )
 
 @Serializable
@@ -203,6 +204,31 @@ data class GustoAnalisisDto(
     val nombre: String,
     val cantidad: Int,
     val totalCents: Long,
+    val ejemplos: List<String> = emptyList(),
+)
+
+@Serializable
+data class SinClasificarAnalisisDto(
+    val termino: String,
+    val ejemplos: List<String> = emptyList(),
+    val cantidad: Int,
+    val totalCents: Long,
+)
+
+@Serializable
+data class ConceptoDto(
+    val id: String,
+    val nombre: String,
+    val categoria: String,
+    val categoriaNombre: String,
+    val esGusto: Boolean,
+)
+
+@Serializable
+data class ClasificacionRequest(
+    val termino: String,
+    val conceptoId: String,
+    val nota: String? = null,
 )
 
 @Serializable
@@ -224,7 +250,6 @@ data class ProyeccionAnalisisDto(
     val diasTranscurridos: Int,
     val diasTotales: Int,
     val ritmoDiarioCents: Long,
-    val estimadoFinCicloCents: Long,
     val ritmoAnteriorCents: Long,
     val variableCents: Long,
     val fijoCents: Long,
@@ -236,6 +261,7 @@ data class AnalisisDto(
     val resumen: ResumenAnalisisDto,
     val categorias: List<CategoriaAnalisisDto>,
     val gustos: List<GustoAnalisisDto>,
+    val sinClasificar: List<SinClasificarAnalisisDto> = emptyList(),
     val carrera: List<CarreraCicloDto>,
     val proyeccion: ProyeccionAnalisisDto,
 )

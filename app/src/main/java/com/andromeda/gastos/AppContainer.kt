@@ -3,6 +3,7 @@ package com.andromeda.gastos
 import android.content.Context
 import com.andromeda.gastos.application.usecase.ActualizarGastoUseCase
 import com.andromeda.gastos.application.usecase.AutenticacionUseCase
+import com.andromeda.gastos.application.usecase.ClasificarTerminoUseCase
 import com.andromeda.gastos.application.usecase.ConsultarAnalisisUseCase
 import com.andromeda.gastos.application.usecase.ConsultarGastosUseCase
 import com.andromeda.gastos.application.usecase.EliminarGastoUseCase
@@ -14,6 +15,7 @@ import com.andromeda.gastos.application.usecase.RegistrarGastoUseCase
 import com.andromeda.gastos.application.usecase.SeguridadUseCase
 import com.andromeda.gastos.domain.port.portin.ActualizarGastoPort
 import com.andromeda.gastos.domain.port.portin.AutenticacionPort
+import com.andromeda.gastos.domain.port.portin.ClasificarTerminoPort
 import com.andromeda.gastos.domain.port.portin.ConsultarAnalisisPort
 import com.andromeda.gastos.domain.port.portin.ConsultarGastosPort
 import com.andromeda.gastos.domain.port.portin.EliminarGastoPort
@@ -60,6 +62,7 @@ class AppContainer(context: Context) {
     val eliminarGasto: EliminarGastoPort = EliminarGastoUseCase(gastoRepo)
     val consultarGastos: ConsultarGastosPort = ConsultarGastosUseCase(gastoRepo)
     val consultarAnalisis: ConsultarAnalisisPort = ConsultarAnalisisUseCase(analisisRepo)
+    val clasificarTermino: ClasificarTerminoPort = ClasificarTerminoUseCase(analisisRepo)
     val exportarGastos: ExportarGastosPort = ExportarGastosUseCase(exportRemoto, exportLocal)
     val seguridad: SeguridadPort = SeguridadUseCase(seguridadRemoto)
     val registrarGastoPorVoz: RegistrarGastoPorVozPort =

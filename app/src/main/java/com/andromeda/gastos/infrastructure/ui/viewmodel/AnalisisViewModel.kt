@@ -7,7 +7,9 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.andromeda.gastos.AppContainer
 import com.andromeda.gastos.domain.entity.Analisis
+import com.andromeda.gastos.domain.entity.Concepto
 import com.andromeda.gastos.domain.entity.ResumenCiclo
+import com.andromeda.gastos.domain.port.portin.ClasificarTerminoPort
 import com.andromeda.gastos.domain.port.portin.ConsultarAnalisisPort
 import com.andromeda.gastos.domain.port.portin.ConsultarGastosPort
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,12 +22,18 @@ data class AnalisisUiState(
     val ciclos: List<ResumenCiclo> = emptyList(),
     val seleccionado: Int = 0,
     val analisis: Analisis? = null,
+    val conceptos: List<Concepto> = emptyList(),
+    val terminoEditando: String? = null,
+    val nombreEditando: String? = null,
+    val guardando: Boolean = false,
+    val mensaje: String? = null,
     val error: String? = null,
 )
 
 class AnalisisViewModel(
     private val consultarAnalisis: ConsultarAnalisisPort,
     private val consultarGastos: ConsultarGastosPort,
+    private val clasificarTermino: ClasificarTerminoPort,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AnalisisUiState())
@@ -34,9 +42,19 @@ class AnalisisViewModel(
     fun cargar(hogarId: String) {
         viewModelScope.launch {
             _state.update { it.copy(cargando = true, error = null) }
-            runCatching { consultarGastos.listarCiclos(hogarId) }
-                .onSuccess { ciclos ->
-                    _state.update { it.copy(cargando = false, ciclos = ciclos) }
+            runCatching {
+                val ciclos = consultarGastos.listarCiclos(hogarId)
+                val conceptos = if (_state.value.conceptos.isEmpty()) {
+                    consultarAnalisis.conceptos()
+                } else {
+                    _state.value.conceptos
+                }
+                ciclos to conceptos
+            }
+                .onSuccess { (ciclos, conceptos) ->
+                    _state.update {
+                        it.copy(cargando = false, ciclos = ciclos, conceptos = conceptos)
+                    }
                     if (ciclos.isNotEmpty()) analizar(hogarId, 0)
                 }
                 .onFailure { error ->
@@ -50,6 +68,45 @@ class AnalisisViewModel(
     fun seleccionar(hogarId: String, indice: Int) {
         _state.update { it.copy(seleccionado = indice) }
         analizar(hogarId, indice)
+    }
+
+    fun abrirCorreccion(termino: String, nombre: String) {
+        _state.update { it.copy(terminoEditando = termino, nombreEditando = nombre) }
+    }
+
+    fun cerrarCorreccion() {
+        _state.update { it.copy(terminoEditando = null, nombreEditando = null) }
+    }
+
+    fun limpiarMensaje() {
+        _state.update { it.copy(mensaje = null) }
+    }
+
+    fun clasificar(hogarId: String, termino: String, conceptoId: String, nota: String?) {
+        viewModelScope.launch {
+            _state.update { it.copy(guardando = true) }
+            runCatching { clasificarTermino.clasificar(hogarId, termino, conceptoId, nota) }
+                .onSuccess {
+                    val nombre = _state.value.nombreEditando ?: termino
+                    _state.update {
+                        it.copy(
+                            guardando = false,
+                            terminoEditando = null,
+                            nombreEditando = null,
+                            mensaje = "Listo. Ahora «$nombre» entra en tu análisis.",
+                        )
+                    }
+                    analizar(hogarId, _state.value.seleccionado)
+                }
+                .onFailure { error ->
+                    _state.update {
+                        it.copy(
+                            guardando = false,
+                            mensaje = error.message ?: "No se pudo guardar",
+                        )
+                    }
+                }
+        }
     }
 
     private fun analizar(hogarId: String, indice: Int) {
@@ -74,6 +131,7 @@ class AnalisisViewModel(
                 AnalisisViewModel(
                     consultarAnalisis = container.consultarAnalisis,
                     consultarGastos = container.consultarGastos,
+                    clasificarTermino = container.clasificarTermino,
                 )
             }
         }

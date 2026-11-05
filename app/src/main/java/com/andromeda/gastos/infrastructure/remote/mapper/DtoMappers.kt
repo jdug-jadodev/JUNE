@@ -12,13 +12,16 @@ import com.andromeda.gastos.domain.entity.Analisis
 import com.andromeda.gastos.domain.entity.CarreraCiclo
 import com.andromeda.gastos.domain.entity.CarreraDia
 import com.andromeda.gastos.domain.entity.CategoriaAnalisis
+import com.andromeda.gastos.domain.entity.Concepto
 import com.andromeda.gastos.domain.entity.GustoAnalisis
 import com.andromeda.gastos.domain.entity.ProyeccionAnalisis
 import com.andromeda.gastos.domain.entity.ResumenAnalisis
+import com.andromeda.gastos.domain.entity.SinClasificarAnalisis
 import com.andromeda.gastos.domain.enums.Acceso
 import com.andromeda.gastos.domain.enums.Rol
 import com.andromeda.gastos.infrastructure.remote.dto.AnalisisDto
 import com.andromeda.gastos.infrastructure.remote.dto.AuthResponseDto
+import com.andromeda.gastos.infrastructure.remote.dto.ConceptoDto
 import com.andromeda.gastos.infrastructure.remote.dto.GastoDto
 import com.andromeda.gastos.infrastructure.remote.dto.HogarDto
 import com.andromeda.gastos.infrastructure.remote.dto.MiembroDto
@@ -75,6 +78,14 @@ fun ResumenCicloDto.aDominio(): ResumenCiclo = ResumenCiclo(
     totalCents = totalCents,
 )
 
+fun ConceptoDto.aDominio(): Concepto = Concepto(
+    id = id,
+    nombre = nombre,
+    categoria = categoria,
+    categoriaNombre = categoriaNombre,
+    esGusto = esGusto,
+)
+
 fun AnalisisDto.aDominio(): Analisis = Analisis(
     ciclos = ciclos,
     resumen = ResumenAnalisis(
@@ -90,12 +101,22 @@ fun AnalisisDto.aDominio(): Analisis = Analisis(
             nombre = it.nombre,
             totalCents = it.totalCents,
             cantidad = it.cantidad,
+            ejemplos = it.ejemplos,
         )
     },
     gustos = gustos.map {
         GustoAnalisis(
             conceptoId = it.conceptoId,
             nombre = it.nombre,
+            cantidad = it.cantidad,
+            totalCents = it.totalCents,
+            ejemplos = it.ejemplos,
+        )
+    },
+    sinClasificar = sinClasificar.map {
+        SinClasificarAnalisis(
+            termino = it.termino,
+            ejemplos = it.ejemplos,
             cantidad = it.cantidad,
             totalCents = it.totalCents,
         )
@@ -114,7 +135,6 @@ fun AnalisisDto.aDominio(): Analisis = Analisis(
         diasTranscurridos = proyeccion.diasTranscurridos,
         diasTotales = proyeccion.diasTotales,
         ritmoDiarioCents = proyeccion.ritmoDiarioCents,
-        estimadoFinCicloCents = proyeccion.estimadoFinCicloCents,
         ritmoAnteriorCents = proyeccion.ritmoAnteriorCents,
         variableCents = proyeccion.variableCents,
         fijoCents = proyeccion.fijoCents,
