@@ -194,7 +194,6 @@ private fun ContenidoAnalisis(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { ResumenAnalisisCard(analisis) }
-        item { RitmoCard(analisis) }
         item {
             SeccionCard(titulo = "En qué se fue") {
                 CategoriasExpandibles(
@@ -233,45 +232,27 @@ private fun ResumenAnalisisCard(analisis: Analisis) {
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         ),
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Total del ciclo", style = MaterialTheme.typography.labelMedium)
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("Total del ciclo", style = MaterialTheme.typography.titleMedium)
             Text(
                 text = formatearMonto(resumen.totalCents),
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 text = "${resumen.cantidad} gastos · ${resumen.diasConRegistro} días registrando",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
             )
             Text(
                 text = "Fijo ${formatearPesos(resumen.fijosCents)} · " +
                     "Variable ${formatearPesos(resumen.variablesCents)}",
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-    }
-}
-
-@Composable
-private fun RitmoCard(analisis: Analisis) {
-    val p = analisis.proyeccion
-    SeccionCard(titulo = "Tu ritmo") {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(
-                text = "Vas en el día ${p.diasTranscurridos} de ${p.diasTotales}.",
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Text(
-                text = "En gastos del día a día: ${formatearMonto(p.ritmoDiarioCents)} por día.",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            if (p.ritmoAnteriorCents > 0) {
-                Text(
-                    text = "El ciclo pasado fue de ${formatearMonto(p.ritmoAnteriorCents)} por día.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
         }
     }
 }

@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Folder
@@ -77,7 +76,6 @@ fun HomeScreen(
     onAjustes: (String) -> Unit,
     onAnalisis: (String) -> Unit,
     onVerMeses: (String) -> Unit,
-    onLogout: () -> Unit,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val mensaje by vm.mensaje.collectAsStateWithLifecycle()
@@ -124,9 +122,6 @@ fun HomeScreen(
                         IconButton(onClick = { onAjustes(hogarId) }) {
                             Icon(Icons.Default.Settings, contentDescription = "Ajustes")
                         }
-                    }
-                    IconButton(onClick = onLogout) {
-                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
                     }
                 },
             )

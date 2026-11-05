@@ -111,7 +111,6 @@ private fun MainFlow(
                 onAjustes = { hogarId -> nav.navigate("settings/$hogarId") },
                 onAnalisis = { hogarId -> nav.navigate("analisis/$hogarId") },
                 onVerMeses = { hogarId -> nav.navigate("months/$hogarId") },
-                onLogout = onLogout,
             )
         }
         composable("analisis/{hogarId}") { entrada ->
