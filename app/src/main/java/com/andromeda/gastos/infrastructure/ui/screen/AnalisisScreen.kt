@@ -235,23 +235,23 @@ private fun ResumenAnalisisCard(analisis: Analisis) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+                .padding(horizontal = 20.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Text("Total del ciclo", style = MaterialTheme.typography.titleMedium)
+            Text("Total del ciclo", style = MaterialTheme.typography.titleSmall)
             Text(
                 text = formatearMonto(resumen.totalCents),
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 text = "${resumen.cantidad} gastos · ${resumen.diasConRegistro} días registrando",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
             )
             Text(
                 text = "Fijo ${formatearPesos(resumen.fijosCents)} · " +
                     "Variable ${formatearPesos(resumen.variablesCents)}",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
             )
         }
     }
