@@ -235,8 +235,8 @@ private fun ResumenAnalisisCard(analisis: Analisis) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text("Total del ciclo", style = MaterialTheme.typography.titleMedium)
             Text(
