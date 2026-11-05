@@ -248,11 +248,6 @@ private fun ResumenAnalisisCard(analisis: Analisis) {
                 text = "${resumen.cantidad} gastos · ${resumen.diasConRegistro} días registrando",
                 style = MaterialTheme.typography.bodySmall,
             )
-            Text(
-                text = "Fijo ${formatearPesos(resumen.fijosCents)} · " +
-                    "Variable ${formatearPesos(resumen.variablesCents)}",
-                style = MaterialTheme.typography.bodySmall,
-            )
         }
     }
 }
