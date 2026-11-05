@@ -27,6 +27,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -69,8 +71,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.andromeda.gastos.AppContainer
 import com.andromeda.gastos.domain.entity.Analisis
 import com.andromeda.gastos.domain.entity.CarreraDia
+import com.andromeda.gastos.domain.entity.CategoriaAnalisis
 import com.andromeda.gastos.domain.entity.Concepto
-import com.andromeda.gastos.domain.entity.EjemploAnalisis
 import com.andromeda.gastos.domain.entity.ResumenCiclo
 import com.andromeda.gastos.domain.util.Ciclo
 import com.andromeda.gastos.domain.util.etiquetaCiclo
@@ -195,10 +197,8 @@ private fun ContenidoAnalisis(
         item { RitmoCard(analisis) }
         item {
             SeccionCard(titulo = "En qué se fue") {
-                BarrasHorizontales(
-                    items = analisis.categorias.take(5).map {
-                        FilaBarra(it.nombre, it.totalCents, it.ejemplos)
-                    },
+                CategoriasExpandibles(
+                    categorias = analisis.categorias,
                     onCorregir = onCorregir,
                 )
             }
@@ -336,107 +336,58 @@ private fun SeccionCard(
     }
 }
 
-private data class FilaBarra(
-    val nombre: String,
-    val totalCents: Long,
-    val ejemplos: List<EjemploAnalisis>,
-)
-
 @Composable
-private fun GusticosCard(
-    analisis: Analisis,
+private fun CategoriasExpandibles(
+    categorias: List<CategoriaAnalisis>,
     onCorregir: (termino: String, nombre: String) -> Unit,
 ) {
-    val totalCents = analisis.gustos.sumOf { it.totalCents }
-    val cantidad = analisis.gustos.sumOf { it.cantidad }
-    val ejemplos = analisis.gustos.flatMap { it.ejemplos }.distinctBy { it.termino }.take(3)
+    var expandidas by remember { mutableStateOf(setOf<String>()) }
+    val maximo = (categorias.maxOfOrNull { it.totalCents } ?: 0L).coerceAtLeast(1L)
 
-    SeccionCard(titulo = "Tus gusticos") {
-        Text(
-            text = formatearMonto(totalCents),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            text = "$cantidad ${if (cantidad == 1) "gustico" else "gusticos"} en este ciclo. " +
-                "Aquí entra la pizza, el mecato, las papas, los postres y la gaseosa.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        if (ejemplos.isNotEmpty()) {
-            Text(
-                text = "Los más grandes",
-                style = MaterialTheme.typography.labelMedium,
-            )
-            ejemplos.forEach { ejemplo ->
-                Text(
-                    text = ejemplo.nombre,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        categorias.forEach { categoria ->
+            val abierta = categoria.categoria in expandidas
+            Column(Modifier.fillMaxWidth()) {
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable { onCorregir(ejemplo.termino, ejemplo.nombre) }
-                        .padding(vertical = 4.dp),
-                )
-            }
-            Text(
-                text = "Toca uno para cambiar su categoría.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun BarrasHorizontales(
-    items: List<FilaBarra>,
-    onCorregir: (termino: String, nombre: String) -> Unit,
-) {
-    val maximo = (items.maxOfOrNull { it.totalCents } ?: 0L).coerceAtLeast(1L)
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        items.forEach { fila ->
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable {
+                            expandidas = if (abierta) {
+                                expandidas - categoria.categoria
+                            } else {
+                                expandidas + categoria.categoria
+                            }
+                        }
+                        .padding(vertical = 6.dp, horizontal = 2.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = fila.nombre,
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = categoria.nombre,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
                         modifier = Modifier.weight(1f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = formatearPesos(fila.totalCents),
+                        text = formatearPesos(categoria.totalCents),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
+                    Icon(
+                        imageVector = if (abierta) {
+                            Icons.Filled.KeyboardArrowUp
+                        } else {
+                            Icons.Filled.KeyboardArrowDown
+                        },
+                        contentDescription = if (abierta) "Contraer" else "Expandir",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
-                if (fila.ejemplos.isNotEmpty()) {
-                    Column {
-                        fila.ejemplos.forEach { ejemplo ->
-                            Text(
-                                text = "· ${ejemplo.nombre}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .clickable { onCorregir(ejemplo.termino, ejemplo.nombre) }
-                                    .padding(vertical = 2.dp),
-                            )
-                        }
-                    }
-                }
+
                 Spacer(Modifier.height(4.dp))
                 Box(
                     modifier = Modifier
@@ -447,11 +398,100 @@ private fun BarrasHorizontales(
                 ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth((fila.totalCents.toFloat() / maximo).coerceIn(0f, 1f))
+                            .fillMaxWidth((categoria.totalCents.toFloat() / maximo).coerceIn(0f, 1f))
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(4.dp))
                             .background(MaterialTheme.colorScheme.primary),
                     )
+                }
+
+                if (abierta) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 8.dp, top = 4.dp),
+                    ) {
+                        categoria.ejemplos.forEach { ejemplo ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .clickable { onCorregir(ejemplo.termino, ejemplo.nombre) }
+                                    .padding(vertical = 4.dp, horizontal = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = "• ${ejemplo.nombre}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = formatearPesos(ejemplo.totalCents),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GusticosCard(
+    analisis: Analisis,
+    onCorregir: (termino: String, nombre: String) -> Unit,
+) {
+    val totalCents = analisis.gustos.sumOf { it.totalCents }
+    val cantidad = analisis.gustos.sumOf { it.cantidad }
+    val items = analisis.gustos
+        .flatMap { it.ejemplos }
+        .sortedByDescending { it.totalCents }
+
+    SeccionCard(titulo = "Tus gusticos") {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = formatearMonto(totalCents),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = "$cantidad ${if (cantidad == 1) "gustico" else "gusticos"} en este ciclo.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (items.isEmpty()) {
+                return@Column
+            }
+            Column {
+                items.forEach { ejemplo ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable { onCorregir(ejemplo.termino, ejemplo.nombre) }
+                            .padding(vertical = 5.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "• ${ejemplo.nombre}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = formatearPesos(ejemplo.totalCents),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }

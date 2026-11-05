@@ -11,6 +11,8 @@ data class ResumenAnalisis(
 data class EjemploAnalisis(
     val nombre: String,
     val termino: String,
+    val cantidad: Int,
+    val totalCents: Long,
 )
 
 data class CategoriaAnalisis(

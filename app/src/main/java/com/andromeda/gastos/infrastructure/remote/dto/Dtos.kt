@@ -193,6 +193,8 @@ data class ResumenAnalisisDto(
 data class EjemploAnalisisDto(
     val nombre: String,
     val termino: String,
+    val cantidad: Int = 0,
+    val totalCents: Long = 0,
 )
 
 @Serializable

@@ -91,6 +91,8 @@ fun ConceptoDto.aDominio(): Concepto = Concepto(
 fun EjemploAnalisisDto.aDominio(): EjemploAnalisis = EjemploAnalisis(
     nombre = nombre,
     termino = termino,
+    cantidad = cantidad,
+    totalCents = totalCents,
 )
 
 fun AnalisisDto.aDominio(): Analisis = Analisis(
