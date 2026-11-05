@@ -179,3 +179,63 @@ data class ErrorDto(
     val code: String? = null,
     val message: String? = null,
 )
+
+@Serializable
+data class ResumenAnalisisDto(
+    val totalCents: Long,
+    val cantidad: Int,
+    val diasConRegistro: Int,
+    val fijosCents: Long,
+    val variablesCents: Long,
+)
+
+@Serializable
+data class CategoriaAnalisisDto(
+    val categoria: String,
+    val nombre: String,
+    val totalCents: Long,
+    val cantidad: Int,
+)
+
+@Serializable
+data class GustoAnalisisDto(
+    val conceptoId: String,
+    val nombre: String,
+    val cantidad: Int,
+    val totalCents: Long,
+)
+
+@Serializable
+data class CarreraDiaDto(
+    val fecha: String,
+    val acumuladoCents: Long,
+)
+
+@Serializable
+data class CarreraCicloDto(
+    val etiqueta: String,
+    val inicio: String,
+    val fin: String,
+    val dias: List<CarreraDiaDto>,
+)
+
+@Serializable
+data class ProyeccionAnalisisDto(
+    val diasTranscurridos: Int,
+    val diasTotales: Int,
+    val ritmoDiarioCents: Long,
+    val estimadoFinCicloCents: Long,
+    val ritmoAnteriorCents: Long,
+    val variableCents: Long,
+    val fijoCents: Long,
+)
+
+@Serializable
+data class AnalisisDto(
+    val ciclos: List<String>,
+    val resumen: ResumenAnalisisDto,
+    val categorias: List<CategoriaAnalisisDto>,
+    val gustos: List<GustoAnalisisDto>,
+    val carrera: List<CarreraCicloDto>,
+    val proyeccion: ProyeccionAnalisisDto,
+)

@@ -3,6 +3,7 @@ package com.andromeda.gastos
 import android.content.Context
 import com.andromeda.gastos.application.usecase.ActualizarGastoUseCase
 import com.andromeda.gastos.application.usecase.AutenticacionUseCase
+import com.andromeda.gastos.application.usecase.ConsultarAnalisisUseCase
 import com.andromeda.gastos.application.usecase.ConsultarGastosUseCase
 import com.andromeda.gastos.application.usecase.EliminarGastoUseCase
 import com.andromeda.gastos.application.usecase.ExportarGastosUseCase
@@ -13,6 +14,7 @@ import com.andromeda.gastos.application.usecase.RegistrarGastoUseCase
 import com.andromeda.gastos.application.usecase.SeguridadUseCase
 import com.andromeda.gastos.domain.port.portin.ActualizarGastoPort
 import com.andromeda.gastos.domain.port.portin.AutenticacionPort
+import com.andromeda.gastos.domain.port.portin.ConsultarAnalisisPort
 import com.andromeda.gastos.domain.port.portin.ConsultarGastosPort
 import com.andromeda.gastos.domain.port.portin.EliminarGastoPort
 import com.andromeda.gastos.domain.port.portin.ExportarGastosPort
@@ -25,6 +27,7 @@ import com.andromeda.gastos.infrastructure.export.CsvShareAdapter
 import com.andromeda.gastos.infrastructure.local.CacheDatos
 import com.andromeda.gastos.infrastructure.local.SesionDataStore
 import com.andromeda.gastos.infrastructure.remote.ApiClient
+import com.andromeda.gastos.infrastructure.remote.AnalisisApiAdapter
 import com.andromeda.gastos.infrastructure.remote.AuthApiAdapter
 import com.andromeda.gastos.infrastructure.remote.ExportacionApiAdapter
 import com.andromeda.gastos.infrastructure.remote.GastoApiAdapter
@@ -43,6 +46,7 @@ class AppContainer(context: Context) {
     private val hogarRepo = HogarApiAdapter(apiClient, cache)
     private val miembroRepo = MiembroApiAdapter(apiClient, cache)
     private val gastoRepo = GastoApiAdapter(apiClient)
+    private val analisisRepo = AnalisisApiAdapter(apiClient)
     private val exportRemoto = ExportacionApiAdapter(apiClient)
     private val exportLocal = CsvShareAdapter(context)
     private val seguridadRemoto = SeguridadApiAdapter(apiClient)
@@ -55,6 +59,7 @@ class AppContainer(context: Context) {
     val actualizarGasto: ActualizarGastoPort = ActualizarGastoUseCase(gastoRepo)
     val eliminarGasto: EliminarGastoPort = EliminarGastoUseCase(gastoRepo)
     val consultarGastos: ConsultarGastosPort = ConsultarGastosUseCase(gastoRepo)
+    val consultarAnalisis: ConsultarAnalisisPort = ConsultarAnalisisUseCase(analisisRepo)
     val exportarGastos: ExportarGastosPort = ExportarGastosUseCase(exportRemoto, exportLocal)
     val seguridad: SeguridadPort = SeguridadUseCase(seguridadRemoto)
     val registrarGastoPorVoz: RegistrarGastoPorVozPort =

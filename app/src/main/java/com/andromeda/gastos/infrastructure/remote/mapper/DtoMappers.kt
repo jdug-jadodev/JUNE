@@ -8,8 +8,16 @@ import com.andromeda.gastos.domain.entity.ResumenMes
 import com.andromeda.gastos.domain.entity.Sesion
 import com.andromeda.gastos.domain.entity.Tokens
 import com.andromeda.gastos.domain.entity.Usuario
+import com.andromeda.gastos.domain.entity.Analisis
+import com.andromeda.gastos.domain.entity.CarreraCiclo
+import com.andromeda.gastos.domain.entity.CarreraDia
+import com.andromeda.gastos.domain.entity.CategoriaAnalisis
+import com.andromeda.gastos.domain.entity.GustoAnalisis
+import com.andromeda.gastos.domain.entity.ProyeccionAnalisis
+import com.andromeda.gastos.domain.entity.ResumenAnalisis
 import com.andromeda.gastos.domain.enums.Acceso
 import com.andromeda.gastos.domain.enums.Rol
+import com.andromeda.gastos.infrastructure.remote.dto.AnalisisDto
 import com.andromeda.gastos.infrastructure.remote.dto.AuthResponseDto
 import com.andromeda.gastos.infrastructure.remote.dto.GastoDto
 import com.andromeda.gastos.infrastructure.remote.dto.HogarDto
@@ -65,4 +73,50 @@ fun ResumenCicloDto.aDominio(): ResumenCiclo = ResumenCiclo(
     fin = fin,
     cantidad = cantidad,
     totalCents = totalCents,
+)
+
+fun AnalisisDto.aDominio(): Analisis = Analisis(
+    ciclos = ciclos,
+    resumen = ResumenAnalisis(
+        totalCents = resumen.totalCents,
+        cantidad = resumen.cantidad,
+        diasConRegistro = resumen.diasConRegistro,
+        fijosCents = resumen.fijosCents,
+        variablesCents = resumen.variablesCents,
+    ),
+    categorias = categorias.map {
+        CategoriaAnalisis(
+            categoria = it.categoria,
+            nombre = it.nombre,
+            totalCents = it.totalCents,
+            cantidad = it.cantidad,
+        )
+    },
+    gustos = gustos.map {
+        GustoAnalisis(
+            conceptoId = it.conceptoId,
+            nombre = it.nombre,
+            cantidad = it.cantidad,
+            totalCents = it.totalCents,
+        )
+    },
+    carrera = carrera.map {
+        CarreraCiclo(
+            etiqueta = it.etiqueta,
+            inicio = it.inicio,
+            fin = it.fin,
+            dias = it.dias.map { d ->
+                CarreraDia(fecha = d.fecha, acumuladoCents = d.acumuladoCents)
+            },
+        )
+    },
+    proyeccion = ProyeccionAnalisis(
+        diasTranscurridos = proyeccion.diasTranscurridos,
+        diasTotales = proyeccion.diasTotales,
+        ritmoDiarioCents = proyeccion.ritmoDiarioCents,
+        estimadoFinCicloCents = proyeccion.estimadoFinCicloCents,
+        ritmoAnteriorCents = proyeccion.ritmoAnteriorCents,
+        variableCents = proyeccion.variableCents,
+        fijoCents = proyeccion.fijoCents,
+    ),
 )

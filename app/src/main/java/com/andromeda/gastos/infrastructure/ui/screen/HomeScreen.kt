@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.People
@@ -74,6 +75,7 @@ fun HomeScreen(
     onVoz: (String) -> Unit,
     onMiembros: (String) -> Unit,
     onAjustes: (String) -> Unit,
+    onAnalisis: (String) -> Unit,
     onVerMeses: (String) -> Unit,
     onLogout: () -> Unit,
 ) {
@@ -113,6 +115,9 @@ fun HomeScreen(
                 },
                 actions = {
                     if (hogarId != null) {
+                        IconButton(onClick = { onAnalisis(hogarId) }) {
+                            Icon(Icons.Filled.BarChart, contentDescription = "Análisis")
+                        }
                         IconButton(onClick = { onMiembros(hogarId) }) {
                             Icon(Icons.Default.People, contentDescription = "Miembros")
                         }
