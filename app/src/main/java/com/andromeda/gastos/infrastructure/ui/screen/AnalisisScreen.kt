@@ -13,7 +13,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -34,16 +36,16 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,12 +62,15 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.andromeda.gastos.AppContainer
 import com.andromeda.gastos.domain.entity.Analisis
 import com.andromeda.gastos.domain.entity.CarreraDia
 import com.andromeda.gastos.domain.entity.Concepto
+import com.andromeda.gastos.domain.entity.EjemploAnalisis
 import com.andromeda.gastos.domain.entity.ResumenCiclo
 import com.andromeda.gastos.domain.util.Ciclo
 import com.andromeda.gastos.domain.util.etiquetaCiclo
@@ -136,14 +141,18 @@ fun AnalisisScreen(
 
     val terminoEditando = state.terminoEditando
     if (terminoEditando != null) {
-        HojaCorreccion(
+        DialogoCorreccion(
             termino = state.nombreEditando ?: terminoEditando,
             conceptos = state.conceptos,
             guardando = state.guardando,
+            creandoCategoria = state.creandoCategoria,
+            categoriaCreada = state.categoriaCreada,
+            errorCategoria = state.errorCategoria,
             onCancelar = vm::cerrarCorreccion,
             onGuardar = { conceptoId, nota ->
                 vm.clasificar(hogarId, terminoEditando, conceptoId, nota)
             },
+            onCrearCategoria = { nombre -> vm.crearCategoria(hogarId, nombre) },
         )
     }
 }
@@ -190,6 +199,7 @@ private fun ContenidoAnalisis(
                     items = analisis.categorias.take(5).map {
                         FilaBarra(it.nombre, it.totalCents, it.ejemplos)
                     },
+                    onCorregir = onCorregir,
                 )
             }
         }
@@ -203,13 +213,7 @@ private fun ContenidoAnalisis(
         }
         if (analisis.gustos.isNotEmpty()) {
             item {
-                SeccionCard(titulo = "Tus gustos pequeños") {
-                    BarrasHorizontales(
-                        items = analisis.gustos.take(6).map {
-                            FilaBarra(it.nombre, it.totalCents, it.ejemplos)
-                        },
-                    )
-                }
+                GusticosCard(analisis, onCorregir)
             }
         }
         item {
@@ -290,7 +294,7 @@ private fun SinClasificarCard(
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = item.ejemplos.firstOrNull() ?: item.termino,
+                        text = item.ejemplos.firstOrNull()?.nombre ?: item.termino,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
@@ -306,7 +310,10 @@ private fun SinClasificarCard(
                 Spacer(Modifier.width(8.dp))
                 TextButton(
                     onClick = {
-                        onCorregir(item.termino, item.ejemplos.firstOrNull() ?: item.termino)
+                        onCorregir(
+                            item.termino,
+                            item.ejemplos.firstOrNull()?.nombre ?: item.termino,
+                        )
                     },
                 ) {
                     Text("¿Qué es?")
@@ -332,11 +339,63 @@ private fun SeccionCard(
 private data class FilaBarra(
     val nombre: String,
     val totalCents: Long,
-    val ejemplos: List<String>,
+    val ejemplos: List<EjemploAnalisis>,
 )
 
 @Composable
-private fun BarrasHorizontales(items: List<FilaBarra>) {
+private fun GusticosCard(
+    analisis: Analisis,
+    onCorregir: (termino: String, nombre: String) -> Unit,
+) {
+    val totalCents = analisis.gustos.sumOf { it.totalCents }
+    val cantidad = analisis.gustos.sumOf { it.cantidad }
+    val ejemplos = analisis.gustos.flatMap { it.ejemplos }.distinctBy { it.termino }.take(3)
+
+    SeccionCard(titulo = "Tus gusticos") {
+        Text(
+            text = formatearMonto(totalCents),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = "$cantidad ${if (cantidad == 1) "gustico" else "gusticos"} en este ciclo. " +
+                "Aquí entra la pizza, el mecato, las papas, los postres y la gaseosa.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (ejemplos.isNotEmpty()) {
+            Text(
+                text = "Los más grandes",
+                style = MaterialTheme.typography.labelMedium,
+            )
+            ejemplos.forEach { ejemplo ->
+                Text(
+                    text = ejemplo.nombre,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { onCorregir(ejemplo.termino, ejemplo.nombre) }
+                        .padding(vertical = 4.dp),
+                )
+            }
+            Text(
+                text = "Toca uno para cambiar su categoría.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun BarrasHorizontales(
+    items: List<FilaBarra>,
+    onCorregir: (termino: String, nombre: String) -> Unit,
+) {
     val maximo = (items.maxOfOrNull { it.totalCents } ?: 0L).coerceAtLeast(1L)
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         items.forEach { fila ->
@@ -361,13 +420,22 @@ private fun BarrasHorizontales(items: List<FilaBarra>) {
                     )
                 }
                 if (fila.ejemplos.isNotEmpty()) {
-                    Text(
-                        text = fila.ejemplos.joinToString(" · "),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    Column {
+                        fila.ejemplos.forEach { ejemplo ->
+                            Text(
+                                text = "· ${ejemplo.nombre}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .clickable { onCorregir(ejemplo.termino, ejemplo.nombre) }
+                                    .padding(vertical = 2.dp),
+                            )
+                        }
+                    }
                 }
                 Spacer(Modifier.height(4.dp))
                 Box(
@@ -392,21 +460,26 @@ private fun BarrasHorizontales(items: List<FilaBarra>) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HojaCorreccion(
+private fun DialogoCorreccion(
     termino: String,
     conceptos: List<Concepto>,
     guardando: Boolean,
+    creandoCategoria: Boolean,
+    categoriaCreada: Concepto?,
+    errorCategoria: String?,
     onCancelar: () -> Unit,
     onGuardar: (conceptoId: String, nota: String?) -> Unit,
+    onCrearCategoria: (nombre: String) -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var busqueda by remember { mutableStateOf("") }
     var seleccionado by remember { mutableStateOf<String?>(null) }
     var nota by remember { mutableStateOf("") }
+    var mostrarCrear by remember { mutableStateOf(false) }
+    var nuevaCategoria by remember { mutableStateOf("") }
 
     val filtrados = remember(busqueda, conceptos) {
         val texto = busqueda.trim().lowercase()
-        if (texto.isEmpty()) {
+        val base = if (texto.isEmpty()) {
             conceptos
         } else {
             conceptos.filter {
@@ -414,95 +487,203 @@ private fun HojaCorreccion(
                     it.categoriaNombre.lowercase().contains(texto)
             }
         }
+        // Las categorías propias van primero para que sea fácil encontrarlas.
+        base.sortedWith(compareBy({ it.categoriaNombre != "Personalizada" }, { it.nombre }))
     }
 
-    ModalBottomSheet(onDismissRequest = onCancelar, sheetState = sheetState) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+    LaunchedEffect(categoriaCreada?.id) {
+        val nueva = categoriaCreada ?: return@LaunchedEffect
+        seleccionado = nueva.id
+        mostrarCrear = false
+        nuevaCategoria = ""
+    }
+
+    Dialog(
+        onDismissRequest = onCancelar,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnClickOutside = false,
+        ),
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background,
         ) {
-            Text(
-                text = "¿Qué es «$termino»?",
-                style = MaterialTheme.typography.titleLarge,
-            )
-            Text(
-                text = "Se aplicará a todos los gastos que tengan ese nombre.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            OutlinedTextField(
-                value = busqueda,
-                onValueChange = { busqueda = it },
-                label = { Text("Buscar categoría") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 240.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                items(filtrados, key = { it.id }) { concepto ->
-                    val activo = concepto.id == seleccionado
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { seleccionado = concepto.id }
-                            .background(
-                                if (activo) {
-                                    MaterialTheme.colorScheme.primaryContainer
-                                } else {
-                                    Color.Transparent
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = { Text("¿Qué es?") },
+                        navigationIcon = {
+                            IconButton(onClick = onCancelar) {
+                                Icon(Icons.Filled.Close, contentDescription = "Cerrar")
+                            }
+                        },
+                    )
+                },
+                bottomBar = {
+                    Surface(tonalElevation = 3.dp) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .navigationBarsPadding()
+                                .imePadding()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            OutlinedTextField(
+                                value = nota,
+                                onValueChange = { if (it.length <= 240) nota = it },
+                                label = { Text("Descripción (opcional)") },
+                                supportingText = {
+                                    Text("Con una descripción el análisis es más preciso.")
                                 },
+                                maxLines = 3,
+                                modifier = Modifier.fillMaxWidth(),
                             )
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RadioButton(
-                            selected = activo,
-                            onClick = { seleccionado = concepto.id },
-                        )
-                        Column {
-                            Text(concepto.nombre, style = MaterialTheme.typography.bodyMedium)
-                            Text(
-                                text = concepto.categoriaNombre,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            Button(
+                                onClick = {
+                                    onGuardar(seleccionado!!, nota.trim().ifBlank { null })
+                                },
+                                enabled = seleccionado != null && !guardando && !creandoCategoria,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(52.dp),
+                            ) {
+                                if (guardando) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp,
+                                    )
+                                } else {
+                                    Text("Guardar")
+                                }
+                            }
                         }
                     }
-                }
-            }
-
-            OutlinedTextField(
-                value = nota,
-                onValueChange = { if (it.length <= 240) nota = it },
-                label = { Text("Descripción (opcional)") },
-                supportingText = {
-                    Text("Con una descripción el análisis es más preciso.")
                 },
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            Button(
-                onClick = { onGuardar(seleccionado!!, nota.trim().ifBlank { null }) },
-                enabled = seleccionado != null && !guardando,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                if (guardando) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp,
+            ) { padding ->
+                Column(
+                    modifier = Modifier
+                        .padding(padding)
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        text = termino,
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
-                } else {
-                    Text("Guardar")
+                    Text(
+                        text = "Se aplicará a todos los gastos que tengan ese nombre.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    OutlinedTextField(
+                        value = busqueda,
+                        onValueChange = { busqueda = it },
+                        label = { Text("Buscar categoría") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    OutlinedButton(
+                        onClick = { mostrarCrear = !mostrarCrear },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            if (mostrarCrear) {
+                                "Cancelar nueva categoría"
+                            } else {
+                                "+ Crear mi categoría"
+                            },
+                        )
+                    }
+
+                    if (mostrarCrear) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            OutlinedTextField(
+                                value = nuevaCategoria,
+                                onValueChange = { if (it.length <= 40) nuevaCategoria = it },
+                                label = { Text("Nombre de la categoría") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Button(
+                                onClick = { onCrearCategoria(nuevaCategoria) },
+                                enabled = nuevaCategoria.trim().length >= 2 && !creandoCategoria,
+                            ) {
+                                if (creandoCategoria) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(18.dp),
+                                        strokeWidth = 2.dp,
+                                    )
+                                } else {
+                                    Text("Crear")
+                                }
+                            }
+                        }
+                    }
+
+                    if (errorCategoria != null) {
+                        Text(
+                            text = errorCategoria,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        items(filtrados, key = { it.id }) { concepto ->
+                            val activo = concepto.id == seleccionado
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable { seleccionado = concepto.id }
+                                    .background(
+                                        if (activo) {
+                                            MaterialTheme.colorScheme.primaryContainer
+                                        } else {
+                                            Color.Transparent
+                                        },
+                                    )
+                                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                RadioButton(
+                                    selected = activo,
+                                    onClick = { seleccionado = concepto.id },
+                                )
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        text = concepto.nombre,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                    )
+                                    Text(
+                                        text = if (concepto.categoriaNombre == "Personalizada") {
+                                            "Mi categoría"
+                                        } else {
+                                            concepto.categoriaNombre
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -12,6 +12,7 @@ import com.andromeda.gastos.domain.entity.ResumenCiclo
 import com.andromeda.gastos.domain.port.portin.ClasificarTerminoPort
 import com.andromeda.gastos.domain.port.portin.ConsultarAnalisisPort
 import com.andromeda.gastos.domain.port.portin.ConsultarGastosPort
+import com.andromeda.gastos.domain.port.portin.GestionarCategoriasPort
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -26,6 +27,9 @@ data class AnalisisUiState(
     val terminoEditando: String? = null,
     val nombreEditando: String? = null,
     val guardando: Boolean = false,
+    val creandoCategoria: Boolean = false,
+    val categoriaCreada: Concepto? = null,
+    val errorCategoria: String? = null,
     val mensaje: String? = null,
     val error: String? = null,
 )
@@ -34,6 +38,7 @@ class AnalisisViewModel(
     private val consultarAnalisis: ConsultarAnalisisPort,
     private val consultarGastos: ConsultarGastosPort,
     private val clasificarTermino: ClasificarTerminoPort,
+    private val gestionarCategorias: GestionarCategoriasPort,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AnalisisUiState())
@@ -44,12 +49,13 @@ class AnalisisViewModel(
             _state.update { it.copy(cargando = true, error = null) }
             runCatching {
                 val ciclos = consultarGastos.listarCiclos(hogarId)
-                val conceptos = if (_state.value.conceptos.isEmpty()) {
+                val base = if (_state.value.conceptos.isEmpty()) {
                     consultarAnalisis.conceptos()
                 } else {
-                    _state.value.conceptos
+                    _state.value.conceptos.filterNot { it.id.startsWith("cat:") }
                 }
-                ciclos to conceptos
+                val personalizadas = gestionarCategorias.listar(hogarId)
+                ciclos to (base + personalizadas)
             }
                 .onSuccess { (ciclos, conceptos) ->
                     _state.update {
@@ -71,11 +77,55 @@ class AnalisisViewModel(
     }
 
     fun abrirCorreccion(termino: String, nombre: String) {
-        _state.update { it.copy(terminoEditando = termino, nombreEditando = nombre) }
+        _state.update {
+            it.copy(
+                terminoEditando = termino,
+                nombreEditando = nombre,
+                errorCategoria = null,
+                categoriaCreada = null,
+            )
+        }
     }
 
     fun cerrarCorreccion() {
-        _state.update { it.copy(terminoEditando = null, nombreEditando = null) }
+        _state.update {
+            it.copy(
+                terminoEditando = null,
+                nombreEditando = null,
+                errorCategoria = null,
+                categoriaCreada = null,
+            )
+        }
+    }
+
+    fun crearCategoria(hogarId: String, nombre: String) {
+        val limpio = nombre.trim()
+        if (limpio.length < 2) {
+            _state.update { it.copy(errorCategoria = "Escribe un nombre de al menos 2 letras") }
+            return
+        }
+
+        viewModelScope.launch {
+            _state.update { it.copy(creandoCategoria = true, errorCategoria = null) }
+            runCatching { gestionarCategorias.crear(hogarId, limpio) }
+                .onSuccess { categoria ->
+                    _state.update {
+                        it.copy(
+                            creandoCategoria = false,
+                            categoriaCreada = categoria,
+                            conceptos = it.conceptos.filterNot { c -> c.id == categoria.id } + categoria,
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    _state.update {
+                        it.copy(
+                            creandoCategoria = false,
+                            errorCategoria = error.message ?: "No se pudo crear la categoría",
+                        )
+                    }
+                }
+        }
     }
 
     fun limpiarMensaje() {
@@ -132,6 +182,7 @@ class AnalisisViewModel(
                     consultarAnalisis = container.consultarAnalisis,
                     consultarGastos = container.consultarGastos,
                     clasificarTermino = container.clasificarTermino,
+                    gestionarCategorias = container.gestionarCategorias,
                 )
             }
         }

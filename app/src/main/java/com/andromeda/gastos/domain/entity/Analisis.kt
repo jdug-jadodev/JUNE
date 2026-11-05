@@ -8,12 +8,17 @@ data class ResumenAnalisis(
     val variablesCents: Long,
 )
 
+data class EjemploAnalisis(
+    val nombre: String,
+    val termino: String,
+)
+
 data class CategoriaAnalisis(
     val categoria: String,
     val nombre: String,
     val totalCents: Long,
     val cantidad: Int,
-    val ejemplos: List<String> = emptyList(),
+    val ejemplos: List<EjemploAnalisis> = emptyList(),
 )
 
 data class GustoAnalisis(
@@ -21,12 +26,12 @@ data class GustoAnalisis(
     val nombre: String,
     val cantidad: Int,
     val totalCents: Long,
-    val ejemplos: List<String> = emptyList(),
+    val ejemplos: List<EjemploAnalisis> = emptyList(),
 )
 
 data class SinClasificarAnalisis(
     val termino: String,
-    val ejemplos: List<String>,
+    val ejemplos: List<EjemploAnalisis>,
     val cantidad: Int,
     val totalCents: Long,
 )

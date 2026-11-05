@@ -13,6 +13,7 @@ import com.andromeda.gastos.domain.entity.CarreraCiclo
 import com.andromeda.gastos.domain.entity.CarreraDia
 import com.andromeda.gastos.domain.entity.CategoriaAnalisis
 import com.andromeda.gastos.domain.entity.Concepto
+import com.andromeda.gastos.domain.entity.EjemploAnalisis
 import com.andromeda.gastos.domain.entity.GustoAnalisis
 import com.andromeda.gastos.domain.entity.ProyeccionAnalisis
 import com.andromeda.gastos.domain.entity.ResumenAnalisis
@@ -22,6 +23,7 @@ import com.andromeda.gastos.domain.enums.Rol
 import com.andromeda.gastos.infrastructure.remote.dto.AnalisisDto
 import com.andromeda.gastos.infrastructure.remote.dto.AuthResponseDto
 import com.andromeda.gastos.infrastructure.remote.dto.ConceptoDto
+import com.andromeda.gastos.infrastructure.remote.dto.EjemploAnalisisDto
 import com.andromeda.gastos.infrastructure.remote.dto.GastoDto
 import com.andromeda.gastos.infrastructure.remote.dto.HogarDto
 import com.andromeda.gastos.infrastructure.remote.dto.MiembroDto
@@ -86,6 +88,11 @@ fun ConceptoDto.aDominio(): Concepto = Concepto(
     esGusto = esGusto,
 )
 
+fun EjemploAnalisisDto.aDominio(): EjemploAnalisis = EjemploAnalisis(
+    nombre = nombre,
+    termino = termino,
+)
+
 fun AnalisisDto.aDominio(): Analisis = Analisis(
     ciclos = ciclos,
     resumen = ResumenAnalisis(
@@ -101,7 +108,7 @@ fun AnalisisDto.aDominio(): Analisis = Analisis(
             nombre = it.nombre,
             totalCents = it.totalCents,
             cantidad = it.cantidad,
-            ejemplos = it.ejemplos,
+            ejemplos = it.ejemplos.map { ejemplo -> ejemplo.aDominio() },
         )
     },
     gustos = gustos.map {
@@ -110,13 +117,13 @@ fun AnalisisDto.aDominio(): Analisis = Analisis(
             nombre = it.nombre,
             cantidad = it.cantidad,
             totalCents = it.totalCents,
-            ejemplos = it.ejemplos,
+            ejemplos = it.ejemplos.map { ejemplo -> ejemplo.aDominio() },
         )
     },
     sinClasificar = sinClasificar.map {
         SinClasificarAnalisis(
             termino = it.termino,
-            ejemplos = it.ejemplos,
+            ejemplos = it.ejemplos.map { ejemplo -> ejemplo.aDominio() },
             cantidad = it.cantidad,
             totalCents = it.totalCents,
         )

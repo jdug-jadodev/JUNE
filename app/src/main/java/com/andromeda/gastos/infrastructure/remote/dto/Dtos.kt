@@ -190,12 +190,18 @@ data class ResumenAnalisisDto(
 )
 
 @Serializable
+data class EjemploAnalisisDto(
+    val nombre: String,
+    val termino: String,
+)
+
+@Serializable
 data class CategoriaAnalisisDto(
     val categoria: String,
     val nombre: String,
     val totalCents: Long,
     val cantidad: Int,
-    val ejemplos: List<String> = emptyList(),
+    val ejemplos: List<EjemploAnalisisDto> = emptyList(),
 )
 
 @Serializable
@@ -204,13 +210,13 @@ data class GustoAnalisisDto(
     val nombre: String,
     val cantidad: Int,
     val totalCents: Long,
-    val ejemplos: List<String> = emptyList(),
+    val ejemplos: List<EjemploAnalisisDto> = emptyList(),
 )
 
 @Serializable
 data class SinClasificarAnalisisDto(
     val termino: String,
-    val ejemplos: List<String> = emptyList(),
+    val ejemplos: List<EjemploAnalisisDto> = emptyList(),
     val cantidad: Int,
     val totalCents: Long,
 )
@@ -229,6 +235,11 @@ data class ClasificacionRequest(
     val termino: String,
     val conceptoId: String,
     val nota: String? = null,
+)
+
+@Serializable
+data class CrearCategoriaRequest(
+    val nombre: String,
 )
 
 @Serializable
