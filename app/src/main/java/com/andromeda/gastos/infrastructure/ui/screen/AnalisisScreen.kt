@@ -196,6 +196,12 @@ private fun ContenidoAnalisis(
         item { ResumenAnalisisCard(analisis) }
         item {
             SeccionCard(titulo = "En qué se fue") {
+                Text(
+                    text = "Estas categorías se asignan solas y pueden equivocarse. " +
+                        "Tócalas para revisarlas y corregirlas si hace falta.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 CategoriasExpandibles(
                     categorias = analisis.categorias,
                     onCorregir = onCorregir,
