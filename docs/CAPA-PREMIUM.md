@@ -105,9 +105,10 @@ Pedir "cuántos niños, cuántos integrantes, cuánto cuesta vivir" es intrusivo
 | Niños / adolescentes | gastos de colegio, útiles, universidad, mesada, pañales, jardín |
 | Mascotas | categoría de mascotas con gasto |
 | Costo de vida | % del ingreso que se va en gastos fijos |
+| Deudas | categoría "Deudas y pagos" del ciclo, como % del ingreso |
 | Capacidad discrecional | % del ingreso disponible para gustos, ocio, restaurantes y ropa |
 
-Los **montos sugeridos los calcula el backend**, no la IA: parte de un valor por persona (ej. ropa $90.000/mes por persona) y lo recorta si la carga fija es alta. La IA solo redacta el estado, las notas y la recomendación. Así nunca vuelve a sugerir "$40.000 de ropa" para una familia de seis.
+Los **montos sugeridos los calcula el backend**, no la IA. Parte de valores austeros por persona (gusticos $25.000/semana, ocio $35.000/semana, restaurantes $30.000/semana, ropa $60.000/mes) y recorta todo el bloque discrecional a un **6–14% del ingreso** según la carga fija y las deudas. En un hogar con deudas altas, la ropa de seis personas queda en cientos de miles de pesos, no en más de un millón. La IA solo redacta el estado, las notas y la recomendación; además recibe el dato de deudas para priorizar lo esencial.
 
 La persona puede **ajustar el número de integrantes** desde la pantalla de análisis. Ese valor:
 
