@@ -264,6 +264,19 @@ data class IngresoRequest(
 )
 
 @Serializable
+data class AnalisisIADto(
+    val texto: String,
+    val ciclos: List<String> = emptyList(),
+    val generadoEl: String = "",
+    val cacheado: Boolean = false,
+)
+
+@Serializable
+data class AiInsightsRequest(
+    val ciclos: List<String>? = null,
+)
+
+@Serializable
 data class CarreraDiaDto(
     val fecha: String,
     val acumuladoCents: Long,

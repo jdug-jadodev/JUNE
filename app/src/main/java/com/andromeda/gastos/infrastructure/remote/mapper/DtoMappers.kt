@@ -11,6 +11,7 @@ import com.andromeda.gastos.domain.entity.Sesion
 import com.andromeda.gastos.domain.entity.Tokens
 import com.andromeda.gastos.domain.entity.Usuario
 import com.andromeda.gastos.domain.entity.Analisis
+import com.andromeda.gastos.domain.entity.AnalisisIA
 import com.andromeda.gastos.domain.entity.CarreraCiclo
 import com.andromeda.gastos.domain.entity.CarreraDia
 import com.andromeda.gastos.domain.entity.CategoriaAnalisis
@@ -23,6 +24,7 @@ import com.andromeda.gastos.domain.entity.SinClasificarAnalisis
 import com.andromeda.gastos.domain.enums.Acceso
 import com.andromeda.gastos.domain.enums.Rol
 import com.andromeda.gastos.infrastructure.remote.dto.AnalisisDto
+import com.andromeda.gastos.infrastructure.remote.dto.AnalisisIADto
 import com.andromeda.gastos.infrastructure.remote.dto.AuthResponseDto
 import com.andromeda.gastos.infrastructure.remote.dto.ConceptoDto
 import com.andromeda.gastos.infrastructure.remote.dto.EjemploAnalisisDto
@@ -68,6 +70,13 @@ fun IngresoDto.aDominio(): Ingreso = Ingreso(
         .getOrDefault(Periodicidad.MENSUAL),
     createdAt = createdAt,
     updatedAt = updatedAt,
+)
+
+fun AnalisisIADto.aDominio(): AnalisisIA = AnalisisIA(
+    texto = texto,
+    ciclos = ciclos,
+    generadoEl = generadoEl,
+    cacheado = cacheado,
 )
 
 fun GastoDto.aDominio(): Gasto = Gasto(

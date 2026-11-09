@@ -136,6 +136,10 @@ fun AnalisisScreen(
                 else -> ContenidoAnalisis(
                     analisis = state.analisis!!,
                     onCorregir = vm::abrirCorreccion,
+                    onAnalizarIA = { vm.generarAnalisisIA(hogarId) },
+                    iaCargando = state.iaCargando,
+                    iaTexto = state.iaTexto,
+                    iaError = state.iaError,
                 )
             }
         }
@@ -183,6 +187,10 @@ private fun SelectorCiclos(
 private fun ContenidoAnalisis(
     analisis: Analisis,
     onCorregir: (termino: String, nombre: String) -> Unit,
+    onAnalizarIA: () -> Unit,
+    iaCargando: Boolean,
+    iaTexto: String?,
+    iaError: String?,
 ) {
     if (analisis.resumen.cantidad == 0) {
         SinDatos()
@@ -194,6 +202,14 @@ private fun ContenidoAnalisis(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { ResumenAnalisisCard(analisis) }
+        item {
+            SeccionIA(
+                cargando = iaCargando,
+                texto = iaTexto,
+                error = iaError,
+                onAnalizar = onAnalizarIA,
+            )
+        }
         item {
             SeccionCard(titulo = "En qué se fue") {
                 Text(
@@ -253,6 +269,61 @@ private fun ResumenAnalisisCard(analisis: Analisis) {
             Text(
                 text = "${resumen.cantidad} gastos · ${resumen.diasConRegistro} días registrando",
                 style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SeccionIA(
+    cargando: Boolean,
+    texto: String?,
+    error: String?,
+    onAnalizar: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Button(
+            onClick = onAnalizar,
+            enabled = !cargando,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+        ) {
+            if (cargando) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            } else {
+                Text("✨ Análisis con IA")
+            }
+        }
+        if (texto != null) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                ),
+            ) {
+                Column(
+                    Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = "Lo que ve la IA",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(texto, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+        if (error != null) {
+            Text(
+                text = error,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
             )
         }
     }

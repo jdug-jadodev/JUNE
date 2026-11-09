@@ -9,6 +9,7 @@ import com.andromeda.gastos.AppContainer
 import com.andromeda.gastos.domain.entity.Analisis
 import com.andromeda.gastos.domain.entity.Concepto
 import com.andromeda.gastos.domain.entity.ResumenCiclo
+import com.andromeda.gastos.domain.port.portin.AnalizarConIAPort
 import com.andromeda.gastos.domain.port.portin.ClasificarTerminoPort
 import com.andromeda.gastos.domain.port.portin.ConsultarAnalisisPort
 import com.andromeda.gastos.domain.port.portin.ConsultarGastosPort
@@ -32,6 +33,9 @@ data class AnalisisUiState(
     val errorCategoria: String? = null,
     val mensaje: String? = null,
     val error: String? = null,
+    val iaCargando: Boolean = false,
+    val iaTexto: String? = null,
+    val iaError: String? = null,
 )
 
 class AnalisisViewModel(
@@ -39,6 +43,7 @@ class AnalisisViewModel(
     private val consultarGastos: ConsultarGastosPort,
     private val clasificarTermino: ClasificarTerminoPort,
     private val gestionarCategorias: GestionarCategoriasPort,
+    private val analizarConIA: AnalizarConIAPort,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AnalisisUiState())
@@ -132,6 +137,22 @@ class AnalisisViewModel(
         _state.update { it.copy(mensaje = null) }
     }
 
+    fun generarAnalisisIA(hogarId: String) {
+        val inicio = _state.value.ciclos.getOrNull(_state.value.seleccionado)?.inicio
+        viewModelScope.launch {
+            _state.update { it.copy(iaCargando = true, iaError = null, iaTexto = null) }
+            runCatching { analizarConIA.analizarConIA(hogarId, inicio?.let { listOf(it) }) }
+                .onSuccess { resultado ->
+                    _state.update { it.copy(iaCargando = false, iaTexto = resultado.texto) }
+                }
+                .onFailure { error ->
+                    _state.update {
+                        it.copy(iaCargando = false, iaError = error.message ?: "No se pudo analizar")
+                    }
+                }
+        }
+    }
+
     fun clasificar(hogarId: String, termino: String, conceptoId: String, nota: String?) {
         viewModelScope.launch {
             _state.update { it.copy(guardando = true) }
@@ -183,6 +204,7 @@ class AnalisisViewModel(
                     consultarGastos = container.consultarGastos,
                     clasificarTermino = container.clasificarTermino,
                     gestionarCategorias = container.gestionarCategorias,
+                    analizarConIA = container.analizarConIA,
                 )
             }
         }
