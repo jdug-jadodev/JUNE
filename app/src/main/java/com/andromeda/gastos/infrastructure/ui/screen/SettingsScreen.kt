@@ -116,83 +116,16 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            val diaValido = state.corteTexto.toIntOrNull()?.let { it in 1..31 } == true
-            val diaPrevio = state.corteTexto.toIntOrNull()?.takeIf { it in 1..31 } ?: state.cutoffDay
-
-            SeccionTarjeta(
-                titulo = "Ciclo de gastos",
+            FilaNavegacion(
+                titulo = "Ciclo e ingresos",
+                descripcion = "Día de corte del ciclo y lo que entra al hogar.",
                 icono = Icons.Outlined.CalendarMonth,
-                descripcion = "Elige el día en que empieza tu ciclo. Por ejemplo, 29 significa " +
-                    "del 29 de un mes al 28 del siguiente.",
-            ) {
-                Text(
-                    text = "Ciclo actual: ${etiquetaCiclo(cicloActual(diaPrevio))}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                if (state.esAdmin) {
-                    OutlinedTextField(
-                        value = state.corteTexto,
-                        onValueChange = vm::onCorte,
-                        label = { Text("Día de corte (1–31)") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    BotonConCarga(
-                        texto = "Guardar ciclo",
-                        cargando = state.guardandoCorte,
-                        habilitado = diaValido && !state.guardandoCorte,
-                        onClick = { vm.guardarCorte(hogarId) },
-                    )
-                } else if (!state.cargandoRol) {
-                    NotaSoloAdmin("Solo el administrador del hogar puede cambiar el día de corte.")
-                }
-            }
-
-            if (state.esAdmin) {
-                FilaNavegacion(
-                    titulo = "Ingresos del hogar",
-                    descripcion = "Cuánto entra (mensual o quincenal) para compararlo con tus gastos.",
-                    icono = Icons.Outlined.AccountBalanceWallet,
-                    onClick = onIngresos,
-                )
-            } else if (!state.cargandoRol) {
-                SeccionTarjeta(titulo = "Ingresos del hogar", icono = Icons.Outlined.AccountBalanceWallet) {
-                    NotaSoloAdmin("Solo el administrador del hogar puede gestionar los ingresos.")
-                }
-            }
-
-            SeccionTarjeta(
-                titulo = "Contraseña de administrador",
-                icono = Icons.Outlined.Key,
-                descripcion = if (state.esAdmin) {
-                    "Solo quien la conozca podrá editar y eliminar gastos."
-                } else {
-                    null
-                },
-            ) {
-                if (state.esAdmin) {
-                    CampoPassword(
-                        value = state.password,
-                        onValueChange = vm::onPassword,
-                        label = "Nueva contraseña (mín. 8)",
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    BotonConCarga(
-                        texto = "Guardar contraseña",
-                        cargando = state.guardando,
-                        habilitado = !state.guardando && state.password.length >= 8,
-                        onClick = { vm.guardarPassword(hogarId) },
-                    )
-                } else if (!state.cargandoRol) {
-                    NotaSoloAdmin("Solo el administrador del hogar puede cambiar la contraseña.")
-                }
-            }
+                onClick = onIngresos,
+            )
 
             FilaNavegacion(
                 titulo = "Seguridad de la cuenta",
-                descripcion = null,
+                descripcion = "Contraseñas, pregunta y llave de recuperación.",
                 icono = Icons.Outlined.Shield,
                 onClick = onSeguridad,
             )

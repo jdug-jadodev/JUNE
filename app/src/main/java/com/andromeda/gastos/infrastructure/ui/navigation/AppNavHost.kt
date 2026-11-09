@@ -245,9 +245,10 @@ private fun MainFlow(
                 onVolver = { nav.popBackStack() },
             )
         }
-        composable("security/{hogarId}") {
+        composable("security/{hogarId}") { entrada ->
             SecurityScreen(
                 container = container,
+                hogarId = entrada.arguments?.getString("hogarId").orEmpty(),
                 onVolver = { nav.popBackStack() },
             )
         }

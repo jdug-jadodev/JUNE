@@ -1,5 +1,14 @@
 package com.andromeda.gastos.infrastructure.ui.screen
 
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.material3.Surface
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material.icons.outlined.CalendarMonth
+import com.andromeda.gastos.domain.util.etiquetaCiclo
+import com.andromeda.gastos.domain.util.cicloActual
+import com.andromeda.gastos.infrastructure.ui.viewmodel.SettingsUiState
+import com.andromeda.gastos.infrastructure.ui.viewmodel.SettingsViewModel
+import com.andromeda.gastos.infrastructure.ui.components.SeccionTarjeta
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
@@ -69,6 +78,8 @@ fun IngresosScreen(
 ) {
     val vm: IngresosViewModel = viewModel(factory = IngresosViewModel.factory(container))
     val state by vm.state.collectAsStateWithLifecycle()
+    val ajustesVm: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(container))
+    val ajustes by ajustesVm.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
 
     var editando by remember { mutableStateOf<Ingreso?>(null) }
@@ -76,6 +87,8 @@ fun IngresosScreen(
 
     LaunchedEffect(hogarId) {
         vm.cargar(hogarId)
+        ajustesVm.cargarRol(hogarId)
+        ajustesVm.cargarCorte(hogarId)
     }
 
     LaunchedEffect(state.mensaje, state.error) {
@@ -85,10 +98,17 @@ fun IngresosScreen(
         }
     }
 
+    LaunchedEffect(ajustes.mensaje, ajustes.error) {
+        (ajustes.mensaje ?: ajustes.error)?.let {
+            snackbar.showSnackbar(it)
+            ajustesVm.limpiarMensaje()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Ingresos del hogar") },
+                title = { Text("Ciclo e ingresos") },
                 navigationIcon = {
                     IconButton(onClick = onVolver) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
@@ -97,60 +117,73 @@ fun IngresosScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbar) },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    editando = null
-                    mostrandoDialogo = true
-                },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = "Agregar ingreso")
-            }
-        },
     ) { padding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .padding(padding)
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .imePadding()
+                .fillMaxSize(),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text(
-                modifier = Modifier.padding(horizontal = 4.dp),
-                text = "Estos son los ingresos del hogar. La IA los usará para comparar " +
-                    "tus gastos contra lo que entra.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(16.dp))
-
-            when {
-                state.cargando -> CircularProgressIndicator(
-                    Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(top = 32.dp),
+            item(key = "ciclo") {
+                SeccionCiclo(
+                    estado = ajustes,
+                    onCorte = ajustesVm::onCorte,
+                    onGuardar = { ajustesVm.guardarCorte(hogarId) },
                 )
+            }
 
-                state.ingresos.isEmpty() -> EstadoVacio(
+            item(key = "ingresos") {
+                SeccionTarjeta(
+                    titulo = "Ingresos del hogar",
                     icono = Icons.Outlined.AccountBalanceWallet,
-                    titulo = "Todavía no hay ingresos",
-                    texto = "Toca el botón + para agregar el primero.",
-                )
-
-                else -> LazyColumn(
-                    contentPadding = PaddingValues(bottom = 96.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    descripcion = if (ajustes.esAdmin) {
+                        "La IA los usa para comparar tus gastos contra lo que entra."
+                    } else {
+                        null
+                    },
                 ) {
-                    items(state.ingresos, key = { it.id }) { ingreso ->
-                        FilaIngreso(
-                            ingreso = ingreso,
-                            onEditar = {
-                                editando = ingreso
-                                mostrandoDialogo = true
-                            },
-                            onEliminar = { vm.eliminar(hogarId, ingreso.id) },
+                    when {
+                        ajustes.cargandoRol -> Unit
+                        !ajustes.esAdmin -> Text(
+                            text = "Solo el administrador del hogar puede gestionar los ingresos.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        else -> {
+                            when {
+                                state.cargando -> CircularProgressIndicator(Modifier.size(24.dp))
+                                state.ingresos.isEmpty() -> Text(
+                                    text = "Todavía no hay ingresos.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                else -> state.ingresos.forEach { ingreso ->
+                                    FilaIngreso(
+                                        ingreso = ingreso,
+                                        onEditar = {
+                                            editando = ingreso
+                                            mostrandoDialogo = true
+                                        },
+                                        onEliminar = { vm.eliminar(hogarId, ingreso.id) },
+                                    )
+                                }
+                            }
+                            FilledTonalButton(
+                                onClick = {
+                                    editando = null
+                                    mostrandoDialogo = true
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp),
+                            ) {
+                                Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Agregar ingreso")
+                            }
+                        }
                     }
                 }
             }
@@ -175,16 +208,75 @@ fun IngresosScreen(
 }
 
 @Composable
+private fun SeccionCiclo(
+    estado: SettingsUiState,
+    onCorte: (String) -> Unit,
+    onGuardar: () -> Unit,
+) {
+    val diaValido = estado.corteTexto.toIntOrNull()?.let { it in 1..31 } == true
+    val diaPrevio = estado.corteTexto.toIntOrNull()?.takeIf { it in 1..31 } ?: estado.cutoffDay
+
+    SeccionTarjeta(
+        titulo = "Ciclo de gastos",
+        icono = Icons.Outlined.CalendarMonth,
+        descripcion = "Elige el día en que empieza tu ciclo. Por ejemplo, 29 significa " +
+            "del 29 de un mes al 28 del siguiente.",
+    ) {
+        Text(
+            text = "Ciclo actual: ${etiquetaCiclo(cicloActual(diaPrevio))}",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        if (estado.esAdmin) {
+            OutlinedTextField(
+                value = estado.corteTexto,
+                onValueChange = onCorte,
+                label = { Text("Día de corte (1–31)") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Button(
+                onClick = onGuardar,
+                enabled = diaValido && !estado.guardandoCorte,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+            ) {
+                if (estado.guardandoCorte) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                } else {
+                    Text("Guardar ciclo")
+                }
+            }
+        } else if (!estado.cargandoRol) {
+            Text(
+                text = "Solo el administrador del hogar puede cambiar el día de corte.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
 private fun FilaIngreso(
     ingreso: Ingreso,
     onEditar: () -> Unit,
     onEliminar: () -> Unit,
 ) {
-    TarjetaSuave(relleno = 0.dp) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 18.dp, end = 6.dp, top = 14.dp, bottom = 14.dp),
+                .padding(start = 16.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {

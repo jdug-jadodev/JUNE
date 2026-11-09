@@ -1,5 +1,11 @@
 package com.andromeda.gastos.infrastructure.ui.screen
 
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material.icons.outlined.VpnKey
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Key
+import com.andromeda.gastos.infrastructure.ui.viewmodel.SettingsViewModel
+import com.andromeda.gastos.infrastructure.ui.components.SeccionTarjeta
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -48,10 +54,13 @@ import com.andromeda.gastos.infrastructure.ui.viewmodel.SecurityViewModel
 @Composable
 fun SecurityScreen(
     container: AppContainer,
+    hogarId: String,
     onVolver: () -> Unit,
 ) {
     val vm: SecurityViewModel = viewModel(factory = SecurityViewModel.factory(container))
     val state by vm.state.collectAsStateWithLifecycle()
+    val ajustesVm: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(container))
+    val ajustes by ajustesVm.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val portapapeles = LocalClipboardManager.current
 
@@ -59,10 +68,21 @@ fun SecurityScreen(
         vm.cargar()
     }
 
+    LaunchedEffect(hogarId) {
+        ajustesVm.cargarRol(hogarId)
+    }
+
     LaunchedEffect(state.mensaje, state.error) {
         (state.mensaje ?: state.error)?.let {
             snackbar.showSnackbar(it)
             vm.limpiarMensaje()
+        }
+    }
+
+    LaunchedEffect(ajustes.mensaje, ajustes.error) {
+        (ajustes.mensaje ?: ajustes.error)?.let {
+            snackbar.showSnackbar(it)
+            ajustesVm.limpiarMensaje()
         }
     }
 
@@ -83,132 +103,128 @@ fun SecurityScreen(
             modifier = Modifier
                 .padding(padding)
                 .imePadding()
-                .padding(24.dp)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text(
-                text = "Pregunta de seguridad",
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Text(
-                text = "Escríbela tú mismo. La respuesta se guarda cifrada.",
-                style = MaterialTheme.typography.bodySmall,
-            )
-            state.preguntaActual?.let {
-                Text(
-                    text = "Pregunta actual: $it",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-
-            OutlinedTextField(
-                value = state.pregunta,
-                onValueChange = vm::onPregunta,
-                label = { Text("Tu pregunta") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            CampoPassword(
-                value = state.respuesta,
-                onValueChange = vm::onRespuesta,
-                label = "Respuesta",
-                keyboardType = KeyboardType.Text,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Button(
-                onClick = vm::guardarPregunta,
-                enabled = !state.guardandoPregunta,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                if (state.guardandoPregunta) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
+            SeccionTarjeta(
+                titulo = "Contraseña de administrador",
+                icono = Icons.Outlined.Key,
+                descripcion = if (ajustes.esAdmin) {
+                    "Solo quien la conozca podrá editar y eliminar gastos."
                 } else {
-                    Text("Guardar pregunta")
+                    null
+                },
+            ) {
+                if (ajustes.esAdmin) {
+                    CampoPassword(
+                        value = ajustes.password,
+                        onValueChange = ajustesVm::onPassword,
+                        label = "Nueva contraseña (mín. 8)",
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    BotonCargando(
+                        texto = "Guardar contraseña",
+                        cargando = ajustes.guardando,
+                        habilitado = !ajustes.guardando && ajustes.password.length >= 8,
+                        onClick = { ajustesVm.guardarPassword(hogarId) },
+                    )
+                } else if (!ajustes.cargandoRol) {
+                    Text(
+                        text = "Solo el administrador del hogar puede cambiar la contraseña.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
 
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+            SeccionTarjeta(
+                titulo = "Pregunta de seguridad",
+                icono = Icons.AutoMirrored.Outlined.HelpOutline,
+                descripcion = "Escríbela tú mismo. La respuesta se guarda cifrada.",
+            ) {
+                state.preguntaActual?.let {
+                    Text(
+                        text = "Pregunta actual: $it",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                OutlinedTextField(
+                    value = state.pregunta,
+                    onValueChange = vm::onPregunta,
+                    label = { Text("Tu pregunta") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                CampoPassword(
+                    value = state.respuesta,
+                    onValueChange = vm::onRespuesta,
+                    label = "Respuesta",
+                    keyboardType = KeyboardType.Text,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                BotonCargando(
+                    texto = "Guardar pregunta",
+                    cargando = state.guardandoPregunta,
+                    habilitado = !state.guardandoPregunta,
+                    onClick = vm::guardarPregunta,
+                )
+            }
 
-            Text(
-                text = "Llave de recuperación",
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Text(
-                text = "Es un código de un solo uso. Guárdalo en un lugar seguro; " +
+            SeccionTarjeta(
+                titulo = "Llave de recuperación",
+                icono = Icons.Outlined.VpnKey,
+                descripcion = "Es un código de un solo uso. Guárdalo en un lugar seguro; " +
                     "si lo pierdes, genera otra llave.",
-                style = MaterialTheme.typography.bodySmall,
-            )
-            if (state.tieneCodigo) {
-                Text(
-                    text = "Ya tienes una llave generada.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
+            ) {
+                if (state.tieneCodigo) {
+                    Text(
+                        text = "Ya tienes una llave generada.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                BotonCargando(
+                    texto = if (state.tieneCodigo) "Generar nueva llave" else "Generar llave",
+                    cargando = state.generandoCodigo,
+                    habilitado = !state.generandoCodigo,
+                    onClick = vm::generarCodigo,
                 )
             }
-            Button(
-                onClick = vm::generarCodigo,
-                enabled = !state.generandoCodigo,
-                modifier = Modifier.fillMaxWidth(),
+
+            SeccionTarjeta(
+                titulo = "Cambiar mi contraseña",
+                icono = Icons.Outlined.Lock,
             ) {
-                if (state.generandoCodigo) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                } else {
-                    Text(if (state.tieneCodigo) "Generar nueva llave" else "Generar llave")
-                }
+                CampoPassword(
+                    value = state.passwordActual,
+                    onValueChange = vm::onPasswordActual,
+                    label = "Contraseña actual",
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                CampoPassword(
+                    value = state.passwordNueva,
+                    onValueChange = vm::onPasswordNueva,
+                    label = "Nueva contraseña (mín. 8)",
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                CampoPassword(
+                    value = state.passwordConfirmacion,
+                    onValueChange = vm::onPasswordConfirmacion,
+                    label = "Confirmar nueva contraseña",
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                BotonCargando(
+                    texto = "Cambiar contraseña",
+                    cargando = state.cambiandoPassword,
+                    habilitado = !state.cambiandoPassword,
+                    onClick = vm::cambiarPassword,
+                )
             }
 
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
-
-            Text(
-                text = "Cambiar mi contraseña",
-                style = MaterialTheme.typography.titleMedium,
-            )
-            CampoPassword(
-                value = state.passwordActual,
-                onValueChange = vm::onPasswordActual,
-                label = "Contraseña actual",
-                modifier = Modifier.fillMaxWidth(),
-            )
-            CampoPassword(
-                value = state.passwordNueva,
-                onValueChange = vm::onPasswordNueva,
-                label = "Nueva contraseña (mín. 8)",
-                modifier = Modifier.fillMaxWidth(),
-            )
-            CampoPassword(
-                value = state.passwordConfirmacion,
-                onValueChange = vm::onPasswordConfirmacion,
-                label = "Confirmar nueva contraseña",
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Button(
-                onClick = vm::cambiarPassword,
-                enabled = !state.cambiandoPassword,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                if (state.cambiandoPassword) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                } else {
-                    Text("Cambiar contraseña")
-                }
-            }
-
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
         }
     }
 
@@ -245,5 +261,31 @@ fun SecurityScreen(
                 }
             },
         )
+    }
+}
+
+@Composable
+private fun BotonCargando(
+    texto: String,
+    cargando: Boolean,
+    habilitado: Boolean,
+    onClick: () -> Unit,
+) {
+    Button(
+        onClick = onClick,
+        enabled = habilitado,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp),
+    ) {
+        if (cargando) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.onPrimary,
+            )
+        } else {
+            Text(texto)
+        }
     }
 }
