@@ -1,6 +1,7 @@
 package com.andromeda.gastos.infrastructure.ui.screen
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,17 +16,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Insights
+import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -33,10 +37,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,9 +51,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -56,13 +65,16 @@ import com.andromeda.gastos.R
 import com.andromeda.gastos.domain.entity.Gasto
 import com.andromeda.gastos.domain.util.cicloActual
 import com.andromeda.gastos.domain.util.etiquetaCiclo
-import com.andromeda.gastos.domain.util.formatearMonto
-import com.andromeda.gastos.domain.util.nombreMes
+import com.andromeda.gastos.domain.util.formatearPesos
+import com.andromeda.gastos.infrastructure.ui.components.DegradadoCauce
 import com.andromeda.gastos.infrastructure.ui.components.DialogoPassword
 import com.andromeda.gastos.infrastructure.ui.components.EditarGastoDialog
+import com.andromeda.gastos.infrastructure.ui.components.EncabezadoGrupo
+import com.andromeda.gastos.infrastructure.ui.components.EstadoVacio
 import com.andromeda.gastos.infrastructure.ui.components.GastoCard
-import com.andromeda.gastos.infrastructure.ui.components.MensajeError
+import com.andromeda.gastos.infrastructure.ui.components.Manrope
 import com.andromeda.gastos.infrastructure.ui.components.PantallaCargando
+import com.andromeda.gastos.infrastructure.ui.components.etiquetaDia
 import com.andromeda.gastos.infrastructure.ui.viewmodel.HomeUiState
 import com.andromeda.gastos.infrastructure.ui.viewmodel.HomeViewModel
 
@@ -76,6 +88,7 @@ fun HomeScreen(
     onAjustes: (String) -> Unit,
     onAnalisis: (String) -> Unit,
     onVerMeses: (String) -> Unit,
+    onBuscar: (String) -> Unit,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val mensaje by vm.mensaje.collectAsStateWithLifecycle()
@@ -104,23 +117,20 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Image(
-                        painter = painterResource(R.drawable.ic_cauce_symbol),
-                        contentDescription = "Cauce",
-                        modifier = Modifier.size(42.dp),
-                    )
-                },
+                title = { MarcaBarra() },
                 actions = {
                     if (hogarId != null) {
+                        IconButton(onClick = { onBuscar(hogarId) }) {
+                            Icon(Icons.Outlined.Search, contentDescription = "Buscar gastos")
+                        }
                         IconButton(onClick = { onAnalisis(hogarId) }) {
-                            Icon(Icons.Filled.BarChart, contentDescription = "Análisis")
+                            Icon(Icons.Outlined.Insights, contentDescription = "Análisis")
                         }
                         IconButton(onClick = { onMiembros(hogarId) }) {
-                            Icon(Icons.Default.People, contentDescription = "Miembros")
+                            Icon(Icons.Outlined.People, contentDescription = "Miembros")
                         }
                         IconButton(onClick = { onAjustes(hogarId) }) {
-                            Icon(Icons.Default.Settings, contentDescription = "Ajustes")
+                            Icon(Icons.Outlined.Settings, contentDescription = "Ajustes")
                         }
                     }
                 },
@@ -130,13 +140,21 @@ fun HomeScreen(
         floatingActionButton = {
             if (hogarId != null && (state as? HomeUiState.Listo)?.puedeEscribir == true) {
                 Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    FloatingActionButton(onClick = { onVoz(hogarId) }) {
+                    SmallFloatingActionButton(
+                        onClick = { onVoz(hogarId) },
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ) {
                         Icon(Icons.Default.Mic, contentDescription = "Registrar por voz")
                     }
-                    FloatingActionButton(onClick = { onAgregar(hogarId) }) {
+                    FloatingActionButton(
+                        onClick = { onAgregar(hogarId) },
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ) {
                         Icon(Icons.Default.Add, contentDescription = "Registrar manualmente")
                     }
                 }
@@ -186,6 +204,26 @@ fun HomeScreen(
 }
 
 @Composable
+private fun MarcaBarra() {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Image(
+            painter = painterResource(R.drawable.ic_cauce_symbol),
+            contentDescription = null,
+            modifier = Modifier.size(30.dp),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = "cauce",
+            fontFamily = Manrope,
+            fontWeight = FontWeight.Bold,
+            fontSize = 22.sp,
+            letterSpacing = (-0.5).sp,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+    }
+}
+
+@Composable
 private fun ListaGastos(
     estado: HomeUiState.Listo,
     onVerMeses: (String) -> Unit,
@@ -194,63 +232,57 @@ private fun ListaGastos(
 ) {
     val ciclo = cicloActual(estado.hogar.cutoffDay)
     val gastosMes = estado.gastos
+    val porDia = remember(gastosMes) { gastosMes.groupBy { it.fecha.take(10) } }
 
-    Column(Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = "Ciclo actual",
-                    style = MaterialTheme.typography.labelSmall,
-                )
-                Text(
-                    text = etiquetaCiclo(ciclo),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            }
-            TextButton(onClick = { onVerMeses(estado.hogar.id) }) {
-                Icon(Icons.Default.Folder, contentDescription = null)
-                Spacer(Modifier.width(6.dp))
-                Text("Ciclos anteriores")
-            }
-        }
-
-        if (!estado.puedeEscribir) {
-            Text(
-                text = "Solo lectura · el administrador puede darte escritura",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 160.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        item(key = "resumen") {
+            TotalDelCiclo(
+                etiqueta = etiquetaCiclo(ciclo),
+                totalCents = gastosMes.sumOf { it.montoCents },
+                cantidad = gastosMes.size,
+                onVerMeses = { onVerMeses(estado.hogar.id) },
             )
         }
 
-        TotalDelMes(
-            totalCents = gastosMes.sumOf { it.montoCents },
-            cantidad = gastosMes.size,
-        )
+        if (!estado.puedeEscribir) {
+            item(key = "solo-lectura") {
+                Text(
+                    text = "Solo lectura · el administrador puede darte escritura",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+                )
+            }
+        }
 
         if (gastosMes.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = "Aún no hay gastos en este ciclo.",
-                    style = MaterialTheme.typography.bodyMedium,
+            item(key = "vacio") {
+                EstadoVacio(
+                    icono = Icons.AutoMirrored.Outlined.ReceiptLong,
+                    titulo = "Aún no hay gastos en este ciclo",
+                    texto = "Registra el primero con + o por voz.",
+                    modifier = Modifier.height(320.dp),
                 )
             }
         } else {
-            LazyColumn(
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(gastosMes, key = { it.id }) { gasto ->
+            porDia.forEach { (dia, gastos) ->
+                item(key = "dia-$dia") {
+                    EncabezadoGrupo(
+                        texto = etiquetaDia(dia),
+                        extremo = formatearPesos(gastos.sumOf { it.montoCents }),
+                    )
+                }
+                items(gastos, key = { it.id }) { gasto ->
                     GastoCard(
                         gasto = gasto,
                         esAdmin = estado.esAdmin,
                         onEditar = onEditar,
                         onEliminar = onEliminar,
+                        mostrarFecha = false,
                     )
                 }
             }
@@ -259,38 +291,54 @@ private fun ListaGastos(
 }
 
 @Composable
-private fun TotalDelMes(
+private fun TotalDelCiclo(
+    etiqueta: String,
     totalCents: Long,
     cantidad: Int,
+    onVerMeses: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        ),
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.extraLarge)
+                .background(DegradadoCauce)
+                .padding(horizontal = 22.dp, vertical = 20.dp),
         ) {
-            Column(Modifier.weight(1f)) {
+            Column {
                 Text(
-                    text = "Total gastado en este ciclo",
+                    text = "CICLO ACTUAL · $etiqueta",
                     style = MaterialTheme.typography.labelMedium,
+                    letterSpacing = 0.8.sp,
+                    color = Color.White.copy(alpha = 0.75f),
                 )
+                Spacer(Modifier.height(10.dp))
                 Text(
-                    text = formatearMonto(totalCents),
-                    style = MaterialTheme.typography.headlineSmall,
+                    text = formatearPesos(totalCents),
+                    fontFamily = Manrope,
                     fontWeight = FontWeight.Bold,
+                    fontSize = 34.sp,
+                    letterSpacing = (-0.5).sp,
+                    color = Color.White,
+                    maxLines = 1,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = if (cantidad == 1) "1 gasto registrado" else "$cantidad gastos registrados",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.75f),
                 )
             }
-            Text(
-                text = if (cantidad == 1) "1 gasto" else "$cantidad gastos",
-                style = MaterialTheme.typography.bodySmall,
-            )
+        }
+        FilledTonalButton(
+            onClick = onVerMeses,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(44.dp),
+        ) {
+            Icon(Icons.Outlined.History, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("Ciclos anteriores")
         }
     }
 }
@@ -306,13 +354,20 @@ private fun Onboarding(vm: HomeViewModel) {
             .padding(24.dp),
         verticalArrangement = Arrangement.Center,
     ) {
+        Image(
+            painter = painterResource(R.drawable.ic_cauce_symbol),
+            contentDescription = null,
+            modifier = Modifier.size(56.dp),
+        )
+        Spacer(Modifier.height(16.dp))
         Text("Configura tu hogar", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(8.dp))
         Text(
             "Crea un hogar nuevo o únete con un código de invitación.",
             style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(28.dp))
 
         OutlinedTextField(
             value = nombre,
@@ -321,16 +376,21 @@ private fun Onboarding(vm: HomeViewModel) {
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
         Button(
             onClick = { vm.crearHogar(nombre) },
             enabled = nombre.isNotBlank(),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
         ) {
             Text("Crear hogar")
         }
 
-        HorizontalDivider(Modifier.padding(vertical = 24.dp))
+        HorizontalDivider(
+            modifier = Modifier.padding(vertical = 28.dp),
+            color = MaterialTheme.colorScheme.outlineVariant,
+        )
 
         OutlinedTextField(
             value = codigo,
@@ -339,11 +399,13 @@ private fun Onboarding(vm: HomeViewModel) {
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
         Button(
             onClick = { vm.unirse(codigo) },
             enabled = codigo.isNotBlank(),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
         ) {
             Text("Unirme")
         }
@@ -359,8 +421,28 @@ private fun ErrorConReintento(mensaje: String, onReintentar: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(mensaje, color = MaterialTheme.colorScheme.error)
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.errorContainer,
+            modifier = Modifier.size(72.dp),
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    Icons.Outlined.CloudOff,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.size(32.dp),
+                )
+            }
+        }
         Spacer(Modifier.height(16.dp))
+        Text(
+            text = mensaje,
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Spacer(Modifier.height(20.dp))
         Button(onClick = onReintentar) {
             Text("Reintentar")
         }

@@ -1,5 +1,16 @@
 package com.andromeda.gastos.infrastructure.ui.screen
 
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material3.Surface
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.FilledTonalButton
+import com.andromeda.gastos.infrastructure.ui.components.TarjetaSuave
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -105,33 +116,48 @@ fun MembersScreen(
                     .fillMaxSize(),
             ) {
                 state.hogar?.let { hogar ->
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(
-                                text = "Código de invitación",
-                                style = MaterialTheme.typography.labelMedium,
-                            )
+                    TarjetaSuave(relleno = 18.dp) {
+                        Text(
+                            text = "Código de invitación",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = hogar.inviteCode,
                                 style = MaterialTheme.typography.headlineSmall,
+                                letterSpacing = 2.sp,
                                 color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.weight(1f),
                             )
-                            Button(
+                            FilledTonalButton(
                                 onClick = {
                                     portapapeles.setText(AnnotatedString(hogar.inviteCode))
                                 },
                             ) {
-                                Text("Copiar código")
+                                Icon(
+                                    Icons.Outlined.ContentCopy,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text("Copiar")
                             }
                         }
+                        Text(
+                            text = "Compártelo para que tu familia se una al hogar.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
-                Text("Familia", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(24.dp))
+                Text(
+                    "Familia",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                )
                 Text(
                     text = if (state.esAdmin) {
                         "Activa o desactiva la escritura de cada miembro."
@@ -139,14 +165,38 @@ fun MembersScreen(
                         "El administrador controla quién puede registrar gastos."
                     },
                     style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 4.dp),
                 )
 
-                LazyColumn(Modifier.weight(1f)) {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     items(state.miembros, key = { it.id }) { miembro ->
                         val esAdministrador = miembro.rol == Rol.ADMIN
                         val puedeEscribir = esAdministrador || miembro.acceso == Acceso.ESCRITURA
 
+                        TarjetaSuave(relleno = 0.dp) {
                         ListItem(
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            leadingContent = {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    modifier = Modifier.size(40.dp),
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = miembro.nombre.ifBlank { miembro.email }
+                                                .take(1).uppercase(),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        )
+                                    }
+                                }
+                            },
                             headlineContent = {
                                 Text(miembro.nombre.ifBlank { miembro.email })
                             },
@@ -157,6 +207,7 @@ fun MembersScreen(
                                         puedeEscribir -> "Puede escribir"
                                         else -> "Solo lectura"
                                     },
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             },
                             trailingContent = {
@@ -241,6 +292,7 @@ fun MembersScreen(
                                 }
                             },
                         )
+                        }
                     }
                 }
 

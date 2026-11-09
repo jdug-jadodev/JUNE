@@ -1,5 +1,11 @@
 package com.andromeda.gastos.infrastructure.ui.screen
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import com.andromeda.gastos.infrastructure.ui.components.EstadoVacio
+import com.andromeda.gastos.infrastructure.ui.components.TarjetaSuave
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -97,6 +103,8 @@ fun IngresosScreen(
                     editando = null
                     mostrandoDialogo = true
                 },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "Agregar ingreso")
             }
@@ -106,15 +114,16 @@ fun IngresosScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             Text(
+                modifier = Modifier.padding(horizontal = 4.dp),
                 text = "Estos son los ingresos del hogar. La IA los usará para comparar " +
                     "tus gastos contra lo que entra.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
 
             when {
                 state.cargando -> CircularProgressIndicator(
@@ -123,14 +132,16 @@ fun IngresosScreen(
                         .padding(top = 32.dp),
                 )
 
-                state.ingresos.isEmpty() -> Text(
-                    text = "Todavía no hay ingresos. Toca el botón + para agregar el primero.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 24.dp),
+                state.ingresos.isEmpty() -> EstadoVacio(
+                    icono = Icons.Outlined.AccountBalanceWallet,
+                    titulo = "Todavía no hay ingresos",
+                    texto = "Toca el botón + para agregar el primero.",
                 )
 
-                else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                else -> LazyColumn(
+                    contentPadding = PaddingValues(bottom = 96.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
                     items(state.ingresos, key = { it.id }) { ingreso ->
                         FilaIngreso(
                             ingreso = ingreso,
@@ -169,24 +180,22 @@ private fun FilaIngreso(
     onEditar: () -> Unit,
     onEliminar: () -> Unit,
 ) {
-    Card {
+    TarjetaSuave(relleno = 0.dp) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(start = 18.dp, end = 6.dp, top = 14.dp, bottom = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
                     text = ingreso.nombre ?: "Ingreso",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleSmall,
                 )
                 Text(
                     text = formatearMonto(ingreso.montoCents),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
                 )
                 Text(
                     text = ingreso.periodicidad.etiqueta,
@@ -195,13 +204,19 @@ private fun FilaIngreso(
                 )
             }
             IconButton(onClick = onEditar) {
-                Icon(Icons.Filled.Edit, contentDescription = "Editar")
+                Icon(
+                    Icons.Outlined.Edit,
+                    contentDescription = "Editar",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
             }
             IconButton(onClick = onEliminar) {
                 Icon(
-                    Icons.Filled.Delete,
+                    Icons.Outlined.Delete,
                     contentDescription = "Eliminar",
                     tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(20.dp),
                 )
             }
         }
@@ -226,10 +241,14 @@ private fun DialogoIngreso(
     val montoCents = MontoParser.aCentavos(montoTexto)
 
     Dialog(onDismissRequest = onCancelar) {
-        Card(Modifier.fillMaxWidth()) {
+        androidx.compose.material3.Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+        ) {
             Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Text(
                     text = if (ingreso == null) "Agregar ingreso" else "Editar ingreso",

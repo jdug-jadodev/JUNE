@@ -17,6 +17,7 @@ import com.andromeda.gastos.infrastructure.ui.components.SplashScreen
 import com.andromeda.gastos.infrastructure.ui.screen.AddExpenseScreen
 import com.andromeda.gastos.infrastructure.ui.screen.AnalisisIAScreen
 import com.andromeda.gastos.infrastructure.ui.screen.AnalisisScreen
+import com.andromeda.gastos.infrastructure.ui.screen.BuscarScreen
 import com.andromeda.gastos.infrastructure.ui.screen.ForgotPasswordScreen
 import com.andromeda.gastos.infrastructure.ui.screen.HomeScreen
 import com.andromeda.gastos.infrastructure.ui.screen.IngresosScreen
@@ -113,6 +114,15 @@ private fun MainFlow(
                 onAjustes = { hogarId -> nav.navigate("settings/$hogarId") },
                 onAnalisis = { hogarId -> nav.navigate("analisis/$hogarId") },
                 onVerMeses = { hogarId -> nav.navigate("months/$hogarId") },
+                onBuscar = { hogarId -> nav.navigate("buscar/$hogarId") },
+            )
+        }
+        composable("buscar/{hogarId}") { entrada ->
+            val hogarId = entrada.arguments?.getString("hogarId").orEmpty()
+            BuscarScreen(
+                container = container,
+                hogarId = hogarId,
+                onVolver = { nav.popBackStack() },
             )
         }
         composable("analisis/{hogarId}") { entrada ->

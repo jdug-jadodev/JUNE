@@ -2,6 +2,7 @@ package com.andromeda.gastos.infrastructure.ui.screen
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,13 +19,20 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -51,6 +60,8 @@ import com.andromeda.gastos.domain.util.Ciclo
 import com.andromeda.gastos.domain.util.cicloActual
 import com.andromeda.gastos.domain.util.etiquetaCiclo
 import com.andromeda.gastos.infrastructure.ui.components.CampoPassword
+import com.andromeda.gastos.infrastructure.ui.components.SeccionTarjeta
+import com.andromeda.gastos.infrastructure.ui.components.TarjetaSuave
 import com.andromeda.gastos.infrastructure.ui.viewmodel.SettingsViewModel
 import com.andromeda.gastos.infrastructure.widget.VoiceWidgetProvider
 import java.time.LocalDate
@@ -100,234 +111,263 @@ fun SettingsScreen(
             modifier = Modifier
                 .padding(padding)
                 .imePadding()
-                .padding(24.dp)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text(
-                text = "Ciclo de gastos",
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Text(
-                text = "Elige el día en que empieza tu ciclo. Por ejemplo, 29 significa " +
-                    "del 29 de un mes al 28 del siguiente.",
-                style = MaterialTheme.typography.bodySmall,
-            )
-
             val diaValido = state.corteTexto.toIntOrNull()?.let { it in 1..31 } == true
             val diaPrevio = state.corteTexto.toIntOrNull()?.takeIf { it in 1..31 } ?: state.cutoffDay
-            Text(
-                text = "Ciclo actual: ${etiquetaCiclo(cicloActual(diaPrevio))}",
-                style = MaterialTheme.typography.bodyMedium,
-            )
 
-            if (state.esAdmin) {
-                OutlinedTextField(
-                    value = state.corteTexto,
-                    onValueChange = vm::onCorte,
-                    label = { Text("Día de corte (1–31)") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Button(
-                    onClick = { vm.guardarCorte(hogarId) },
-                    enabled = diaValido && !state.guardandoCorte,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    if (state.guardandoCorte) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
-                    } else {
-                        Text("Guardar ciclo")
-                    }
-                }
-            } else if (!state.cargandoRol) {
-                Text(
-                    text = "Solo el administrador del hogar puede cambiar el día de corte.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-
-            HorizontalDivider()
-
-            if (state.esAdmin) {
-                Text(
-                    text = "Ingresos del hogar",
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    text = "Carga cuánto entra (mensual o quincenal) para compararlo con tus gastos.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                Button(
-                    onClick = onIngresos,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("Gestionar ingresos")
-                }
-            } else if (!state.cargandoRol) {
-                Text(
-                    text = "Solo el administrador del hogar puede gestionar los ingresos.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-
-            HorizontalDivider()
-
-            if (state.esAdmin) {
-                Text(
-                    text = "Contraseña de administrador",
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    text = "Solo quien la conozca podrá editar y eliminar gastos.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                CampoPassword(
-                    value = state.password,
-                    onValueChange = vm::onPassword,
-                    label = "Nueva contraseña (mín. 8)",
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Button(
-                    onClick = { vm.guardarPassword(hogarId) },
-                    enabled = !state.guardando && state.password.length >= 8,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    if (state.guardando) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
-                    } else {
-                        Text("Guardar contraseña")
-                    }
-                }
-            } else if (!state.cargandoRol) {
-                Text(
-                    text = "Solo el administrador del hogar puede cambiar la contraseña.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-
-            HorizontalDivider()
-
-            Button(
-                onClick = onSeguridad,
-                modifier = Modifier.fillMaxWidth(),
+            SeccionTarjeta(
+                titulo = "Ciclo de gastos",
+                icono = Icons.Outlined.CalendarMonth,
+                descripcion = "Elige el día en que empieza tu ciclo. Por ejemplo, 29 significa " +
+                    "del 29 de un mes al 28 del siguiente.",
             ) {
-                Text("Seguridad de la cuenta")
-            }
-
-            HorizontalDivider()
-
-            Text(
-                text = "Exportar gastos",
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Text(
-                text = "Selecciona los ciclos que quieres exportar o marca todos.",
-                style = MaterialTheme.typography.bodySmall,
-            )
-
-            if (state.cargandoCiclos) {
-                CircularProgressIndicator(Modifier.size(24.dp))
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Checkbox(
-                        checked = state.todosSeleccionados,
-                        onCheckedChange = { vm.seleccionarTodos(it) },
-                    )
-                    Text("Todos los ciclos")
-                }
-
-                state.ciclos.forEach { resumen ->
-                    val ciclo = runCatching {
-                        Ciclo(
-                            inicio = LocalDate.parse(resumen.inicio),
-                            fin = LocalDate.parse(resumen.fin),
-                        )
-                    }.getOrNull()
-
-                    Row(
+                Text(
+                    text = "Ciclo actual: ${etiquetaCiclo(cicloActual(diaPrevio))}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                if (state.esAdmin) {
+                    OutlinedTextField(
+                        value = state.corteTexto,
+                        onValueChange = vm::onCorte,
+                        label = { Text("Día de corte (1–31)") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Checkbox(
-                            checked = resumen.inicio in state.ciclosSeleccionados,
-                            onCheckedChange = { vm.toggleCiclo(resumen.inicio) },
-                        )
-                        Text(ciclo?.let { etiquetaCiclo(it) } ?: resumen.inicio)
-                    }
-                }
-
-                Button(
-                    onClick = { vm.exportar(hogarId) },
-                    enabled = !state.guardando &&
-                        (state.todosSeleccionados || state.ciclosSeleccionados.isNotEmpty()),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    if (state.guardando) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
-                    } else {
-                        Text("Exportar CSV")
-                    }
+                    )
+                    BotonConCarga(
+                        texto = "Guardar ciclo",
+                        cargando = state.guardandoCorte,
+                        habilitado = diaValido && !state.guardandoCorte,
+                        onClick = { vm.guardarCorte(hogarId) },
+                    )
+                } else if (!state.cargandoRol) {
+                    NotaSoloAdmin("Solo el administrador del hogar puede cambiar el día de corte.")
                 }
             }
 
-            HorizontalDivider()
+            if (state.esAdmin) {
+                FilaNavegacion(
+                    titulo = "Ingresos del hogar",
+                    descripcion = "Cuánto entra (mensual o quincenal) para compararlo con tus gastos.",
+                    icono = Icons.Outlined.AccountBalanceWallet,
+                    onClick = onIngresos,
+                )
+            } else if (!state.cargandoRol) {
+                SeccionTarjeta(titulo = "Ingresos del hogar", icono = Icons.Outlined.AccountBalanceWallet) {
+                    NotaSoloAdmin("Solo el administrador del hogar puede gestionar los ingresos.")
+                }
+            }
 
-            Text(
-                text = "Widget de voz",
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Text(
-                text = "Agrega el micrófono a tu pantalla de inicio.",
-                style = MaterialTheme.typography.bodySmall,
-            )
-            Button(
-                onClick = {
-                    val manager = AppWidgetManager.getInstance(contexto)
-                    val provider = ComponentName(contexto, VoiceWidgetProvider::class.java)
-                    if (manager.isRequestPinAppWidgetSupported) {
-                        manager.requestPinAppWidget(provider, null, null)
-                    }
+            SeccionTarjeta(
+                titulo = "Contraseña de administrador",
+                icono = Icons.Outlined.Key,
+                descripcion = if (state.esAdmin) {
+                    "Solo quien la conozca podrá editar y eliminar gastos."
+                } else {
+                    null
                 },
-                modifier = Modifier.fillMaxWidth(),
             ) {
-                Icon(Icons.Default.Mic, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Agregar widget al inicio")
+                if (state.esAdmin) {
+                    CampoPassword(
+                        value = state.password,
+                        onValueChange = vm::onPassword,
+                        label = "Nueva contraseña (mín. 8)",
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    BotonConCarga(
+                        texto = "Guardar contraseña",
+                        cargando = state.guardando,
+                        habilitado = !state.guardando && state.password.length >= 8,
+                        onClick = { vm.guardarPassword(hogarId) },
+                    )
+                } else if (!state.cargandoRol) {
+                    NotaSoloAdmin("Solo el administrador del hogar puede cambiar la contraseña.")
+                }
             }
 
-            HorizontalDivider()
+            FilaNavegacion(
+                titulo = "Seguridad de la cuenta",
+                descripcion = null,
+                icono = Icons.Outlined.Shield,
+                onClick = onSeguridad,
+            )
+
+            SeccionTarjeta(
+                titulo = "Exportar gastos",
+                icono = Icons.Outlined.FileDownload,
+                descripcion = "Selecciona los ciclos que quieres exportar o marca todos.",
+            ) {
+                if (state.cargandoCiclos) {
+                    CircularProgressIndicator(Modifier.size(24.dp))
+                } else {
+                    Column {
+                        FilaCheck(
+                            texto = "Todos los ciclos",
+                            marcado = state.todosSeleccionados,
+                            onCambio = { vm.seleccionarTodos(it) },
+                        )
+                        state.ciclos.forEach { resumen ->
+                            val ciclo = runCatching {
+                                Ciclo(
+                                    inicio = LocalDate.parse(resumen.inicio),
+                                    fin = LocalDate.parse(resumen.fin),
+                                )
+                            }.getOrNull()
+                            FilaCheck(
+                                texto = ciclo?.let { etiquetaCiclo(it) } ?: resumen.inicio,
+                                marcado = resumen.inicio in state.ciclosSeleccionados,
+                                onCambio = { vm.toggleCiclo(resumen.inicio) },
+                            )
+                        }
+                    }
+                    BotonConCarga(
+                        texto = "Exportar CSV",
+                        cargando = state.guardando,
+                        habilitado = !state.guardando &&
+                            (state.todosSeleccionados || state.ciclosSeleccionados.isNotEmpty()),
+                        onClick = { vm.exportar(hogarId) },
+                    )
+                }
+            }
+
+            SeccionTarjeta(
+                titulo = "Widget de voz",
+                icono = Icons.Outlined.Widgets,
+                descripcion = "Agrega el micrófono a tu pantalla de inicio.",
+            ) {
+                FilledTonalButton(
+                    onClick = {
+                        val manager = AppWidgetManager.getInstance(contexto)
+                        val provider = ComponentName(contexto, VoiceWidgetProvider::class.java)
+                        if (manager.isRequestPinAppWidgetSupported) {
+                            manager.requestPinAppWidget(provider, null, null)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                ) {
+                    Icon(Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Agregar widget al inicio")
+                }
+            }
 
             OutlinedButton(
                 onClick = onLogout,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
             ) {
-                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
+                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("Cerrar sesión")
             }
 
-            Spacer(Modifier.height(8.dp))
             Text(
                 text = "Servidor: ${com.andromeda.gastos.BuildConfig.API_BASE_URL}",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, bottom = 16.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun BotonConCarga(
+    texto: String,
+    cargando: Boolean,
+    habilitado: Boolean,
+    onClick: () -> Unit,
+) {
+    Button(
+        onClick = onClick,
+        enabled = habilitado,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp),
+    ) {
+        if (cargando) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.onPrimary,
+            )
+        } else {
+            Text(texto)
+        }
+    }
+}
+
+@Composable
+private fun NotaSoloAdmin(texto: String) {
+    Text(
+        text = texto,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
+private fun FilaCheck(texto: String, marcado: Boolean, onCambio: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCambio(!marcado) },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = marcado, onCheckedChange = onCambio)
+        Text(texto, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+private fun FilaNavegacion(
+    titulo: String,
+    descripcion: String?,
+    icono: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+) {
+    TarjetaSuave(onClick = onClick, relleno = 18.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.material3.Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(36.dp),
+            ) {
+                androidx.compose.foundation.layout.Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icono,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(titulo, style = MaterialTheme.typography.titleMedium)
+                if (descripcion != null) {
+                    Text(
+                        text = descripcion,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

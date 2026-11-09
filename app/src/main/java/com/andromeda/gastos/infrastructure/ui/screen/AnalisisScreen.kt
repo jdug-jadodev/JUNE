@@ -1,5 +1,7 @@
 package com.andromeda.gastos.infrastructure.ui.screen
 
+import com.andromeda.gastos.infrastructure.ui.components.TarjetaSuave
+import com.andromeda.gastos.infrastructure.ui.components.DegradadoCauce
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -279,27 +281,32 @@ private fun ContenidoAnalisis(
 @Composable
 private fun ResumenAnalisisCard(analisis: Analisis) {
     val resumen = analisis.resumen
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        ),
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.extraLarge)
+            .background(DegradadoCauce)
+            .padding(horizontal = 22.dp, vertical = 20.dp),
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text("Total del ciclo", style = MaterialTheme.typography.titleSmall)
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = formatearMonto(resumen.totalCents),
-                style = MaterialTheme.typography.headlineSmall,
+                text = "TOTAL DEL CICLO",
+                style = MaterialTheme.typography.labelMedium,
+                letterSpacing = 0.8.sp,
+                color = Color.White.copy(alpha = 0.75f),
+            )
+            Text(
+                text = formatearPesos(resumen.totalCents),
+                fontFamily = Manrope,
                 fontWeight = FontWeight.Bold,
+                fontSize = 32.sp,
+                color = Color.White,
+                maxLines = 1,
             )
             Text(
                 text = "${resumen.cantidad} gastos · ${resumen.diasConRegistro} días registrando",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.75f),
             )
         }
     }
@@ -357,8 +364,8 @@ private fun SeccionCard(
     titulo: String,
     contenido: @Composable () -> Unit,
 ) {
-    Card {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    TarjetaSuave(relleno = 18.dp) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(titulo, style = MaterialTheme.typography.titleMedium)
             contenido()
         }

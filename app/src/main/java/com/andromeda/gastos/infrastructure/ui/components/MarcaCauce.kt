@@ -30,6 +30,11 @@ val Manrope = FontFamily(
     ),
     Font(
         R.font.manrope,
+        weight = FontWeight.SemiBold,
+        variationSettings = FontVariation.Settings(FontVariation.weight(600)),
+    ),
+    Font(
+        R.font.manrope,
         weight = FontWeight.Bold,
         variationSettings = FontVariation.Settings(FontVariation.weight(700)),
     ),

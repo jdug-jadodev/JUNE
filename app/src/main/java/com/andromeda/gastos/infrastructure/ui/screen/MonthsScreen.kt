@@ -1,5 +1,10 @@
 package com.andromeda.gastos.infrastructure.ui.screen
 
+import com.andromeda.gastos.infrastructure.ui.components.TarjetaSuave
+import com.andromeda.gastos.infrastructure.ui.components.EstadoVacio
+import com.andromeda.gastos.domain.util.formatearPesos
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -84,11 +89,15 @@ fun MonthsScreen(
                         .sortedByDescending { (ciclo, _) -> ciclo.inicio }
 
                     if (anteriores.isEmpty()) {
-                        Centrado("No hay ciclos anteriores.")
+                        EstadoVacio(
+                            icono = Icons.Outlined.CalendarMonth,
+                            titulo = "No hay ciclos anteriores",
+                            texto = "Cuando cierre tu ciclo actual, lo verás aquí.",
+                        )
                     } else {
                         LazyColumn(
                             contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             items(anteriores, key = { it.first.inicioIso }) { (ciclo, resumen) ->
                                 CarpetaCiclo(
@@ -118,35 +127,43 @@ private fun CarpetaCiclo(
     resumen: ResumenCiclo,
     onAbrir: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onAbrir),
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(Icons.Default.Folder, contentDescription = null)
-            Spacer(Modifier.width(12.dp))
+    TarjetaSuave(onClick = onAbrir) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.material3.Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(40.dp),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Outlined.CalendarMonth,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+            Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(
                     text = etiquetaCiclo(ciclo),
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                 )
                 Text(
-                    text = "${resumen.cantidad} gastos",
+                    text = if (resumen.cantidad == 1) "1 gasto" else "${resumen.cantidad} gastos",
                     style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Text(
-                text = formatearMonto(resumen.totalCents),
+                text = formatearPesos(resumen.totalCents),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
             Icon(
                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

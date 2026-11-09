@@ -1,5 +1,6 @@
 package com.andromeda.gastos.infrastructure.ui.screen
 
+import androidx.compose.material3.FilledTonalButton
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -107,10 +108,10 @@ fun AddExpenseScreen(
             modifier = Modifier
                 .padding(padding)
                 .imePadding()
-                .padding(24.dp)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             OutlinedTextField(
                 value = state.producto,
@@ -122,7 +123,9 @@ fun AddExpenseScreen(
             OutlinedTextField(
                 value = state.monto,
                 onValueChange = vm::onMonto,
-                label = { Text("Monto en pesos (ej. 35000 o 35.000)") },
+                label = { Text("Monto en pesos") },
+                prefix = { Text("$ ") },
+                supportingText = { Text("Ej. 35000 o 35.000") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
@@ -137,7 +140,7 @@ fun AddExpenseScreen(
 
             MensajeError(state.error)
 
-            Button(
+            FilledTonalButton(
                 onClick = {
                     if (permisoConcedido) {
                         vm.iniciarVoz(hogarId)
@@ -167,7 +170,7 @@ fun AddExpenseScreen(
                 )
             }
 
-            OutlinedButton(
+            Button(
                 onClick = { vm.guardar(hogarId) },
                 enabled = !state.guardando && !state.vozActiva,
                 modifier = Modifier
@@ -178,17 +181,19 @@ fun AddExpenseScreen(
                     CircularProgressIndicator(
                         modifier = Modifier.size(22.dp),
                         strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary,
                     )
                 } else {
                     Text("Registrar")
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
             Text(
                 text = "La voz te pregunta qué compraste y cuánto costó. " +
                     "También puedes escribir los datos arriba.",
                 style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp, start = 4.dp, end = 4.dp),
             )
         }
     }
