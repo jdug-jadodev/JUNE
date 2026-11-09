@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.andromeda.gastos.AppContainer
 import com.andromeda.gastos.domain.entity.Analisis
+import com.andromeda.gastos.domain.entity.AnalisisIA
 import com.andromeda.gastos.domain.entity.Concepto
 import com.andromeda.gastos.domain.entity.ResumenCiclo
 import com.andromeda.gastos.domain.port.portin.AnalizarConIAPort
@@ -34,7 +35,7 @@ data class AnalisisUiState(
     val mensaje: String? = null,
     val error: String? = null,
     val iaCargando: Boolean = false,
-    val iaTexto: String? = null,
+    val iaAnalisis: AnalisisIA? = null,
     val iaError: String? = null,
 )
 
@@ -140,10 +141,10 @@ class AnalisisViewModel(
     fun generarAnalisisIA(hogarId: String) {
         val inicio = _state.value.ciclos.getOrNull(_state.value.seleccionado)?.inicio
         viewModelScope.launch {
-            _state.update { it.copy(iaCargando = true, iaError = null, iaTexto = null) }
+            _state.update { it.copy(iaCargando = true, iaError = null, iaAnalisis = null) }
             runCatching { analizarConIA.analizarConIA(hogarId, inicio?.let { listOf(it) }) }
                 .onSuccess { resultado ->
-                    _state.update { it.copy(iaCargando = false, iaTexto = resultado.texto) }
+                    _state.update { it.copy(iaCargando = false, iaAnalisis = resultado) }
                 }
                 .onFailure { error ->
                     _state.update {

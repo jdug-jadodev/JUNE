@@ -265,10 +265,30 @@ data class IngresoRequest(
 
 @Serializable
 data class AnalisisIADto(
-    val texto: String,
     val ciclos: List<String> = emptyList(),
-    val generadoEl: String = "",
+    val progreso: ProgresoCicloIADto? = null,
+    val estado: String = "",
+    val sugerencias: List<SugerenciaIADto> = emptyList(),
+    val recomendacion: String = "",
     val cacheado: Boolean = false,
+)
+
+@Serializable
+data class ProgresoCicloIADto(
+    val diasTranscurridos: Int = 0,
+    val diasTotales: Int = 0,
+    val diasRestantes: Int = 0,
+    val totalCents: Long = 0,
+    val ingresoMensualCents: Long = 0,
+    val porcentajeIngreso: Int = 0,
+)
+
+@Serializable
+data class SugerenciaIADto(
+    val categoria: String = "",
+    val montoCents: Long = 0,
+    val periodicidad: String = "SEMANAL",
+    val nota: String = "",
 )
 
 @Serializable

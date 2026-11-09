@@ -70,6 +70,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.andromeda.gastos.AppContainer
 import com.andromeda.gastos.domain.entity.Analisis
+import com.andromeda.gastos.domain.entity.AnalisisIA
 import com.andromeda.gastos.domain.entity.CarreraDia
 import com.andromeda.gastos.domain.entity.CategoriaAnalisis
 import com.andromeda.gastos.domain.entity.Concepto
@@ -138,7 +139,7 @@ fun AnalisisScreen(
                     onCorregir = vm::abrirCorreccion,
                     onAnalizarIA = { vm.generarAnalisisIA(hogarId) },
                     iaCargando = state.iaCargando,
-                    iaTexto = state.iaTexto,
+                    iaAnalisis = state.iaAnalisis,
                     iaError = state.iaError,
                 )
             }
@@ -189,7 +190,7 @@ private fun ContenidoAnalisis(
     onCorregir: (termino: String, nombre: String) -> Unit,
     onAnalizarIA: () -> Unit,
     iaCargando: Boolean,
-    iaTexto: String?,
+    iaAnalisis: AnalisisIA?,
     iaError: String?,
 ) {
     if (analisis.resumen.cantidad == 0) {
@@ -205,7 +206,7 @@ private fun ContenidoAnalisis(
         item {
             SeccionIA(
                 cargando = iaCargando,
-                texto = iaTexto,
+                analisis = iaAnalisis,
                 error = iaError,
                 onAnalizar = onAnalizarIA,
             )
@@ -277,11 +278,11 @@ private fun ResumenAnalisisCard(analisis: Analisis) {
 @Composable
 private fun SeccionIA(
     cargando: Boolean,
-    texto: String?,
+    analisis: AnalisisIA?,
     error: String?,
     onAnalizar: () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Button(
             onClick = onAnalizar,
             enabled = !cargando,
@@ -296,29 +297,121 @@ private fun SeccionIA(
                     color = MaterialTheme.colorScheme.onPrimary,
                 )
             } else {
-                Text("✨ Análisis con IA")
+                Text("✨ Analizar con IA")
             }
         }
-        if (texto != null) {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                ),
-            ) {
-                Column(
-                    Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+
+        if (analisis != null) {
+            val progreso = analisis.progreso
+            if (progreso != null) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ),
                 ) {
-                    Text(
-                        text = "Lo que ve la IA",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(texto, style = MaterialTheme.typography.bodyMedium)
+                    Column(
+                        Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            text = "Tu ciclo",
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                        Text(
+                            text = "Día ${progreso.diasTranscurridos} de ${progreso.diasTotales} · " +
+                                "faltan ${progreso.diasRestantes} días",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text = "Gastaste ${formatearMonto(progreso.totalCents)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        if (progreso.ingresoMensualCents > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(10.dp)
+                                    .clip(RoundedCornerShape(5.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(
+                                            (progreso.porcentajeIngreso / 100f).coerceIn(0f, 1f),
+                                        )
+                                        .fillMaxHeight()
+                                        .clip(RoundedCornerShape(5.dp))
+                                        .background(MaterialTheme.colorScheme.primary),
+                                )
+                            }
+                            Text(
+                                text = "${progreso.porcentajeIngreso}% de tu ingreso mensual",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
                 }
             }
+
+            if (analisis.estado.isNotBlank()) {
+                Text(
+                    text = analisis.estado,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+
+            if (analisis.sugerencias.isNotEmpty()) {
+                Card {
+                    Column(
+                        Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Text(
+                            text = "Montos sugeridos",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        analisis.sugerencias.forEach { s ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(s.categoria, style = MaterialTheme.typography.bodyMedium)
+                                    if (s.nota.isNotBlank()) {
+                                        Text(
+                                            text = s.nota,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                                Spacer(Modifier.width(12.dp))
+                                Text(
+                                    text = formatearPesos(s.montoCents) + " / " +
+                                        if (s.periodicidad == "MENSUAL") "mes" else "semana",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (analisis.recomendacion.isNotBlank()) {
+                Text(
+                    text = "💡 " + analisis.recomendacion,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
         }
+
         if (error != null) {
             Text(
                 text = error,

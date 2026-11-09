@@ -12,6 +12,8 @@ import com.andromeda.gastos.domain.entity.Tokens
 import com.andromeda.gastos.domain.entity.Usuario
 import com.andromeda.gastos.domain.entity.Analisis
 import com.andromeda.gastos.domain.entity.AnalisisIA
+import com.andromeda.gastos.domain.entity.ProgresoCicloIA
+import com.andromeda.gastos.domain.entity.SugerenciaIA
 import com.andromeda.gastos.domain.entity.CarreraCiclo
 import com.andromeda.gastos.domain.entity.CarreraDia
 import com.andromeda.gastos.domain.entity.CategoriaAnalisis
@@ -25,6 +27,7 @@ import com.andromeda.gastos.domain.enums.Acceso
 import com.andromeda.gastos.domain.enums.Rol
 import com.andromeda.gastos.infrastructure.remote.dto.AnalisisDto
 import com.andromeda.gastos.infrastructure.remote.dto.AnalisisIADto
+import com.andromeda.gastos.infrastructure.remote.dto.SugerenciaIADto
 import com.andromeda.gastos.infrastructure.remote.dto.AuthResponseDto
 import com.andromeda.gastos.infrastructure.remote.dto.ConceptoDto
 import com.andromeda.gastos.infrastructure.remote.dto.EjemploAnalisisDto
@@ -73,10 +76,28 @@ fun IngresoDto.aDominio(): Ingreso = Ingreso(
 )
 
 fun AnalisisIADto.aDominio(): AnalisisIA = AnalisisIA(
-    texto = texto,
     ciclos = ciclos,
-    generadoEl = generadoEl,
+    progreso = progreso?.let {
+        ProgresoCicloIA(
+            diasTranscurridos = it.diasTranscurridos,
+            diasTotales = it.diasTotales,
+            diasRestantes = it.diasRestantes,
+            totalCents = it.totalCents,
+            ingresoMensualCents = it.ingresoMensualCents,
+            porcentajeIngreso = it.porcentajeIngreso,
+        )
+    },
+    estado = estado,
+    sugerencias = sugerencias.map { it.aDominio() },
+    recomendacion = recomendacion,
     cacheado = cacheado,
+)
+
+fun SugerenciaIADto.aDominio(): SugerenciaIA = SugerenciaIA(
+    categoria = categoria,
+    montoCents = montoCents,
+    periodicidad = periodicidad,
+    nota = nota,
 )
 
 fun GastoDto.aDominio(): Gasto = Gasto(
