@@ -1,7 +1,7 @@
 # Escalar Cauce — plan de producto, costos y capa paga
 
 > Documento vivo. Última actualización: noviembre 2026.
-> Complementa `docs/MODO-NEGOCIO.md` (especificación futura del segmento negocio).
+> Complementa `docs/MODO-NEGOCIO.md` (especificación futura del segmento negocio) y `docs/CAPA-PREMIUM.md` (diseño de la capa paga y del motor de IA).
 
 ---
 

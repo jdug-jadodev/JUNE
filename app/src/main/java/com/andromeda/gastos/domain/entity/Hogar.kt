@@ -7,4 +7,5 @@ data class Hogar(
     val inviteCode: String,
     val cutoffDay: Int = 1,
     val createdAt: String,
+    val plan: String = "FREE",
 )

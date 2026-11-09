@@ -42,6 +42,7 @@ fun HogarDto.aDominio(): Hogar = Hogar(
     inviteCode = inviteCode,
     cutoffDay = cutoffDay,
     createdAt = createdAt,
+    plan = plan,
 )
 
 fun MiembroDto.aDominio(): Miembro = Miembro(
