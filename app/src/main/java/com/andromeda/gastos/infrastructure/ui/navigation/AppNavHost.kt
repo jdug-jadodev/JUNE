@@ -18,6 +18,7 @@ import com.andromeda.gastos.infrastructure.ui.screen.AddExpenseScreen
 import com.andromeda.gastos.infrastructure.ui.screen.AnalisisScreen
 import com.andromeda.gastos.infrastructure.ui.screen.ForgotPasswordScreen
 import com.andromeda.gastos.infrastructure.ui.screen.HomeScreen
+import com.andromeda.gastos.infrastructure.ui.screen.IngresosScreen
 import com.andromeda.gastos.infrastructure.ui.screen.LoginScreen
 import com.andromeda.gastos.infrastructure.ui.screen.MembersScreen
 import com.andromeda.gastos.infrastructure.ui.screen.MonthDetailScreen
@@ -194,6 +195,15 @@ private fun MainFlow(
                 onSeguridad = { nav.navigate("security/$hogarId") },
                 onVolver = { nav.popBackStack() },
                 onLogout = onLogout,
+                onIngresos = { nav.navigate("ingresos/$hogarId") },
+            )
+        }
+        composable("ingresos/{hogarId}") { entrada ->
+            val hogarId = entrada.arguments?.getString("hogarId").orEmpty()
+            IngresosScreen(
+                container = container,
+                hogarId = hogarId,
+                onVolver = { nav.popBackStack() },
             )
         }
         composable("security/{hogarId}") {

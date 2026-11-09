@@ -63,6 +63,7 @@ fun SettingsScreen(
     onSeguridad: () -> Unit,
     onVolver: () -> Unit,
     onLogout: () -> Unit,
+    onIngresos: () -> Unit,
 ) {
     val vm: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(container))
     val state by vm.state.collectAsStateWithLifecycle()
@@ -148,6 +149,30 @@ fun SettingsScreen(
             } else if (!state.cargandoRol) {
                 Text(
                     text = "Solo el administrador del hogar puede cambiar el día de corte.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+
+            HorizontalDivider()
+
+            if (state.esAdmin) {
+                Text(
+                    text = "Ingresos del hogar",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = "Carga cuánto entra (mensual o quincenal) para compararlo con tus gastos.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Button(
+                    onClick = onIngresos,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Gestionar ingresos")
+                }
+            } else if (!state.cargandoRol) {
+                Text(
+                    text = "Solo el administrador del hogar puede gestionar los ingresos.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }

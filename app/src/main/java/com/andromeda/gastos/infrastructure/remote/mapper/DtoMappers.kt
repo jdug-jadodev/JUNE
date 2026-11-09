@@ -2,7 +2,9 @@ package com.andromeda.gastos.infrastructure.remote.mapper
 
 import com.andromeda.gastos.domain.entity.Gasto
 import com.andromeda.gastos.domain.entity.Hogar
+import com.andromeda.gastos.domain.entity.Ingreso
 import com.andromeda.gastos.domain.entity.Miembro
+import com.andromeda.gastos.domain.entity.Periodicidad
 import com.andromeda.gastos.domain.entity.ResumenCiclo
 import com.andromeda.gastos.domain.entity.ResumenMes
 import com.andromeda.gastos.domain.entity.Sesion
@@ -26,6 +28,7 @@ import com.andromeda.gastos.infrastructure.remote.dto.ConceptoDto
 import com.andromeda.gastos.infrastructure.remote.dto.EjemploAnalisisDto
 import com.andromeda.gastos.infrastructure.remote.dto.GastoDto
 import com.andromeda.gastos.infrastructure.remote.dto.HogarDto
+import com.andromeda.gastos.infrastructure.remote.dto.IngresoDto
 import com.andromeda.gastos.infrastructure.remote.dto.MiembroDto
 import com.andromeda.gastos.infrastructure.remote.dto.ResumenCicloDto
 import com.andromeda.gastos.infrastructure.remote.dto.ResumenMesDto
@@ -54,6 +57,17 @@ fun MiembroDto.aDominio(): Miembro = Miembro(
     rol = runCatching { Rol.valueOf(rol) }.getOrDefault(Rol.MIEMBRO),
     acceso = runCatching { Acceso.valueOf(acceso) }.getOrDefault(Acceso.ESCRITURA),
     joinedAt = joinedAt,
+)
+
+fun IngresoDto.aDominio(): Ingreso = Ingreso(
+    id = id,
+    hogarId = hogarId,
+    nombre = nombre,
+    montoCents = montoCents,
+    periodicidad = runCatching { Periodicidad.valueOf(periodicidad) }
+        .getOrDefault(Periodicidad.MENSUAL),
+    createdAt = createdAt,
+    updatedAt = updatedAt,
 )
 
 fun GastoDto.aDominio(): Gasto = Gasto(

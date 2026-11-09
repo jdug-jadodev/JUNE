@@ -246,6 +246,24 @@ data class CrearCategoriaRequest(
 )
 
 @Serializable
+data class IngresoDto(
+    val id: String,
+    val hogarId: String,
+    val nombre: String? = null,
+    val montoCents: Long,
+    val periodicidad: String,
+    val createdAt: String = "",
+    val updatedAt: String = "",
+)
+
+@Serializable
+data class IngresoRequest(
+    val nombre: String? = null,
+    val montoCents: Long,
+    val periodicidad: String,
+)
+
+@Serializable
 data class CarreraDiaDto(
     val fecha: String,
     val acumuladoCents: Long,
