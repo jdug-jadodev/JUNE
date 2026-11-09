@@ -31,7 +31,9 @@ import com.andromeda.gastos.domain.port.portin.GestionarMiembrosPort
 import com.andromeda.gastos.domain.port.portin.RegistrarGastoPorVozPort
 import com.andromeda.gastos.domain.port.portin.RegistrarGastoPort
 import com.andromeda.gastos.domain.port.portin.SeguridadPort
+import com.andromeda.gastos.domain.port.portout.AjustesHogarLocalPort
 import com.andromeda.gastos.infrastructure.export.CsvShareAdapter
+import com.andromeda.gastos.infrastructure.local.AjustesHogarDataStore
 import com.andromeda.gastos.infrastructure.local.CacheDatos
 import com.andromeda.gastos.infrastructure.local.SesionDataStore
 import com.andromeda.gastos.infrastructure.remote.ApiClient
@@ -51,6 +53,9 @@ class AppContainer(context: Context) {
     private val sesionLocal = SesionDataStore(context)
     private val apiClient = ApiClient(BuildConfig.API_BASE_URL, sesionLocal)
     private val cache = CacheDatos()
+
+    /** Preferencias que nunca salen del teléfono (ej. personas en casa). */
+    val ajustesHogarLocal: AjustesHogarLocalPort = AjustesHogarDataStore(context)
 
     private val authRemoto = AuthApiAdapter(apiClient)
     private val hogarRepo = HogarApiAdapter(apiClient, cache)

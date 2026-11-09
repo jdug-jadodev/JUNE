@@ -19,6 +19,7 @@ data class SugerenciaIA(
 data class AnalisisIA(
     val ciclos: List<String> = emptyList(),
     val progreso: ProgresoCicloIA? = null,
+    val personasEstimadas: Int = 0,
     val estado: String = "",
     val sugerencias: List<SugerenciaIA> = emptyList(),
     val recomendacion: String = "",

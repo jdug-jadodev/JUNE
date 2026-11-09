@@ -267,6 +267,7 @@ data class IngresoRequest(
 data class AnalisisIADto(
     val ciclos: List<String> = emptyList(),
     val progreso: ProgresoCicloIADto? = null,
+    val personasEstimadas: Int = 0,
     val estado: String = "",
     val sugerencias: List<SugerenciaIADto> = emptyList(),
     val recomendacion: String = "",
@@ -294,6 +295,8 @@ data class SugerenciaIADto(
 @Serializable
 data class AiInsightsRequest(
     val ciclos: List<String>? = null,
+    /** Personas en casa ajustadas en este teléfono. No se guarda en la base. */
+    val personas: Int? = null,
 )
 
 @Serializable

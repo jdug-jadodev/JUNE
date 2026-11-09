@@ -15,6 +15,7 @@ import com.andromeda.gastos.AppContainer
 import com.andromeda.gastos.domain.entity.Sesion
 import com.andromeda.gastos.infrastructure.ui.components.SplashScreen
 import com.andromeda.gastos.infrastructure.ui.screen.AddExpenseScreen
+import com.andromeda.gastos.infrastructure.ui.screen.AnalisisIAScreen
 import com.andromeda.gastos.infrastructure.ui.screen.AnalisisScreen
 import com.andromeda.gastos.infrastructure.ui.screen.ForgotPasswordScreen
 import com.andromeda.gastos.infrastructure.ui.screen.HomeScreen
@@ -119,6 +120,34 @@ private fun MainFlow(
             AnalisisScreen(
                 container = container,
                 hogarId = hogarId,
+                onVolver = { nav.popBackStack() },
+                onAnalizarIA = { inicio, fin ->
+                    nav.navigate("analisis-ia/$hogarId?inicio=$inicio&fin=$fin")
+                },
+            )
+        }
+        composable(
+            route = "analisis-ia/{hogarId}?inicio={inicio}&fin={fin}",
+            arguments = listOf(
+                navArgument("hogarId") { type = NavType.StringType },
+                navArgument("inicio") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                navArgument("fin") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+            ),
+        ) { entrada ->
+            val hogarId = entrada.arguments?.getString("hogarId").orEmpty()
+            AnalisisIAScreen(
+                container = container,
+                hogarId = hogarId,
+                inicio = entrada.arguments?.getString("inicio"),
+                fin = entrada.arguments?.getString("fin"),
                 onVolver = { nav.popBackStack() },
             )
         }

@@ -109,6 +109,14 @@ Pedir "cuántos niños, cuántos integrantes, cuánto cuesta vivir" es intrusivo
 
 Los **montos sugeridos los calcula el backend**, no la IA: parte de un valor por persona (ej. ropa $90.000/mes por persona) y lo recorta si la carga fija es alta. La IA solo redacta el estado, las notas y la recomendación. Así nunca vuelve a sugerir "$40.000 de ropa" para una familia de seis.
 
+La persona puede **ajustar el número de integrantes** desde la pantalla de análisis. Ese valor:
+
+- se guarda **solo en el teléfono** (DataStore local, por hogar), nunca en D1;
+- se envía únicamente en la petición del análisis para que la IA lo use en ese momento;
+- se puede volver a la deducción automática cuando quiera.
+
+Si no hay ajuste, el backend deduce el número con los integrantes registrados y el gasto en mercado.
+
 ---
 
 ## 7. Presupuesto de IA (economía de tokens)

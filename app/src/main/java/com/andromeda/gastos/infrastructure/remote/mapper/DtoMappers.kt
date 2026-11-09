@@ -88,6 +88,7 @@ fun AnalisisIADto.aDominio(): AnalisisIA = AnalisisIA(
         )
     },
     estado = estado,
+    personasEstimadas = personasEstimadas,
     sugerencias = sugerencias.map { it.aDominio() },
     recomendacion = recomendacion,
     cacheado = cacheado,

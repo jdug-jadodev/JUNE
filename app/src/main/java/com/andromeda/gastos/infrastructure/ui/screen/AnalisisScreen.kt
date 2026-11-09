@@ -29,6 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -58,19 +59,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.andromeda.gastos.AppContainer
 import com.andromeda.gastos.domain.entity.Analisis
-import com.andromeda.gastos.domain.entity.AnalisisIA
 import com.andromeda.gastos.domain.entity.CarreraDia
 import com.andromeda.gastos.domain.entity.CategoriaAnalisis
 import com.andromeda.gastos.domain.entity.Concepto
@@ -79,6 +81,7 @@ import com.andromeda.gastos.domain.util.Ciclo
 import com.andromeda.gastos.domain.util.etiquetaCiclo
 import com.andromeda.gastos.domain.util.formatearMonto
 import com.andromeda.gastos.domain.util.formatearPesos
+import com.andromeda.gastos.infrastructure.ui.components.Manrope
 import com.andromeda.gastos.infrastructure.ui.components.PantallaCargando
 import com.andromeda.gastos.infrastructure.ui.viewmodel.AnalisisViewModel
 import java.time.LocalDate
@@ -89,6 +92,7 @@ fun AnalisisScreen(
     container: AppContainer,
     hogarId: String,
     onVolver: () -> Unit,
+    onAnalizarIA: (inicio: String, fin: String) -> Unit,
 ) {
     val vm: AnalisisViewModel = viewModel(factory = AnalisisViewModel.factory(container))
     val state by vm.state.collectAsStateWithLifecycle()
@@ -116,6 +120,13 @@ fun AnalisisScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbar) },
+        floatingActionButton = {
+            val ciclo = state.ciclos.getOrNull(state.seleccionado)
+            val hayDatos = (state.analisis?.resumen?.cantidad ?: 0) > 0
+            if (ciclo != null && hayDatos && !state.cargando) {
+                BotonIA(onClick = { onAnalizarIA(ciclo.inicio, ciclo.fin) })
+            }
+        },
     ) { padding ->
         Column(
             modifier = Modifier
@@ -137,10 +148,6 @@ fun AnalisisScreen(
                 else -> ContenidoAnalisis(
                     analisis = state.analisis!!,
                     onCorregir = vm::abrirCorreccion,
-                    onAnalizarIA = { vm.generarAnalisisIA(hogarId) },
-                    iaCargando = state.iaCargando,
-                    iaAnalisis = state.iaAnalisis,
-                    iaError = state.iaError,
                 )
             }
         }
@@ -161,6 +168,41 @@ fun AnalisisScreen(
             },
             onCrearCategoria = { nombre -> vm.crearCategoria(hogarId, nombre) },
         )
+    }
+}
+
+@Composable
+private fun BotonIA(onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        shadowElevation = 8.dp,
+        modifier = Modifier.size(60.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Brush.linearGradient(listOf(Color(0xFF0F766E), Color(0xFF0B1F3A)))),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "IA",
+                fontFamily = Manrope,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                letterSpacing = 0.5.sp,
+                color = Color.White,
+            )
+            Icon(
+                imageVector = Icons.Outlined.AutoAwesome,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 11.dp, end = 11.dp)
+                    .size(12.dp),
+            )
+        }
     }
 }
 
@@ -188,10 +230,6 @@ private fun SelectorCiclos(
 private fun ContenidoAnalisis(
     analisis: Analisis,
     onCorregir: (termino: String, nombre: String) -> Unit,
-    onAnalizarIA: () -> Unit,
-    iaCargando: Boolean,
-    iaAnalisis: AnalisisIA?,
-    iaError: String?,
 ) {
     if (analisis.resumen.cantidad == 0) {
         SinDatos()
@@ -199,18 +237,10 @@ private fun ContenidoAnalisis(
     }
 
     LazyColumn(
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { ResumenAnalisisCard(analisis) }
-        item {
-            SeccionIA(
-                cargando = iaCargando,
-                analisis = iaAnalisis,
-                error = iaError,
-                onAnalizar = onAnalizarIA,
-            )
-        }
         item {
             SeccionCard(titulo = "En qué se fue") {
                 Text(
@@ -270,153 +300,6 @@ private fun ResumenAnalisisCard(analisis: Analisis) {
             Text(
                 text = "${resumen.cantidad} gastos · ${resumen.diasConRegistro} días registrando",
                 style = MaterialTheme.typography.bodySmall,
-            )
-        }
-    }
-}
-
-@Composable
-private fun SeccionIA(
-    cargando: Boolean,
-    analisis: AnalisisIA?,
-    error: String?,
-    onAnalizar: () -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Button(
-            onClick = onAnalizar,
-            enabled = !cargando,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-        ) {
-            if (cargando) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                )
-            } else {
-                Text("✨ Analizar con IA")
-            }
-        }
-
-        if (analisis != null) {
-            val progreso = analisis.progreso
-            if (progreso != null) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    ),
-                ) {
-                    Column(
-                        Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        Text(
-                            text = "Tu ciclo",
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                        Text(
-                            text = "Día ${progreso.diasTranscurridos} de ${progreso.diasTotales} · " +
-                                "faltan ${progreso.diasRestantes} días",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            text = "Gastaste ${formatearMonto(progreso.totalCents)}",
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        if (progreso.ingresoMensualCents > 0) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(10.dp)
-                                    .clip(RoundedCornerShape(5.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth(
-                                            (progreso.porcentajeIngreso / 100f).coerceIn(0f, 1f),
-                                        )
-                                        .fillMaxHeight()
-                                        .clip(RoundedCornerShape(5.dp))
-                                        .background(MaterialTheme.colorScheme.primary),
-                                )
-                            }
-                            Text(
-                                text = "${progreso.porcentajeIngreso}% de tu ingreso mensual",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (analisis.estado.isNotBlank()) {
-                Text(
-                    text = analisis.estado,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-
-            if (analisis.sugerencias.isNotEmpty()) {
-                Card {
-                    Column(
-                        Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Text(
-                            text = "Montos sugeridos",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        analisis.sugerencias.forEach { s ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(s.categoria, style = MaterialTheme.typography.bodyMedium)
-                                    if (s.nota.isNotBlank()) {
-                                        Text(
-                                            text = s.nota,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
-                                }
-                                Spacer(Modifier.width(12.dp))
-                                Text(
-                                    text = formatearPesos(s.montoCents) + " / " +
-                                        if (s.periodicidad == "MENSUAL") "mes" else "semana",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (analisis.recomendacion.isNotBlank()) {
-                Text(
-                    text = "💡 " + analisis.recomendacion,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                )
-            }
-        }
-
-        if (error != null) {
-            Text(
-                text = error,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
             )
         }
     }

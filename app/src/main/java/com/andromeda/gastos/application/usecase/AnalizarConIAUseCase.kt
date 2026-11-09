@@ -8,6 +8,9 @@ class AnalizarConIAUseCase(
     private val repositorio: AnalisisIARepositorioPort,
 ) : AnalizarConIAPort {
 
-    override suspend fun analizarConIA(hogarId: String, ciclos: List<String>?): AnalisisIA =
-        repositorio.analizarConIA(hogarId, ciclos)
+    override suspend fun analizarConIA(
+        hogarId: String,
+        ciclos: List<String>?,
+        personas: Int?,
+    ): AnalisisIA = repositorio.analizarConIA(hogarId, ciclos, personas)
 }

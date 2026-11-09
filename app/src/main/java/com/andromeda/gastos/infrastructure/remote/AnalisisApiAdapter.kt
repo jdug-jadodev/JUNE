@@ -51,10 +51,14 @@ class AnalisisApiAdapter(
         }.verificar()
     }
 
-    override suspend fun analizarConIA(hogarId: String, ciclos: List<String>?): AnalisisIA =
+    override suspend fun analizarConIA(
+        hogarId: String,
+        ciclos: List<String>?,
+        personas: Int?,
+    ): AnalisisIA =
         api.http.post(api.url("/households/$hogarId/ai-insights")) {
             autorizacion(api)
             contentType(ContentType.Application.Json)
-            setBody(AiInsightsRequest(ciclos = ciclos))
+            setBody(AiInsightsRequest(ciclos = ciclos, personas = personas))
         }.decodificar<AnalisisIADto>().aDominio()
 }
