@@ -2,7 +2,14 @@ package com.andromeda.gastos.infrastructure.ui.screen
 
 import com.andromeda.gastos.infrastructure.ui.components.TarjetaSuave
 import com.andromeda.gastos.infrastructure.ui.components.DegradadoCauce
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.TouchApp
+import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -99,6 +106,7 @@ fun AnalisisScreen(
     val vm: AnalisisViewModel = viewModel(factory = AnalisisViewModel.factory(container))
     val state by vm.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    var categoriaActual by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         vm.cargar(hogarId)
@@ -149,7 +157,10 @@ fun AnalisisScreen(
                 state.analisis == null -> SinDatos()
                 else -> ContenidoAnalisis(
                     analisis = state.analisis!!,
-                    onCorregir = vm::abrirCorreccion,
+                    onCorregir = { termino, nombre, categoria ->
+                        categoriaActual = categoria
+                        vm.abrirCorreccion(termino, nombre)
+                    },
                 )
             }
         }
@@ -159,6 +170,7 @@ fun AnalisisScreen(
     if (terminoEditando != null) {
         DialogoCorreccion(
             termino = state.nombreEditando ?: terminoEditando,
+            categoriaActual = categoriaActual,
             conceptos = state.conceptos,
             guardando = state.guardando,
             creandoCategoria = state.creandoCategoria,
@@ -231,7 +243,7 @@ private fun SelectorCiclos(
 @Composable
 private fun ContenidoAnalisis(
     analisis: Analisis,
-    onCorregir: (termino: String, nombre: String) -> Unit,
+    onCorregir: (termino: String, nombre: String, categoria: String?) -> Unit,
 ) {
     if (analisis.resumen.cantidad == 0) {
         SinDatos()
@@ -246,13 +258,14 @@ private fun ContenidoAnalisis(
         item {
             SeccionCard(titulo = "En qué se fue") {
                 Text(
-                    text = "Estas categorías se asignan solas y pueden equivocarse. " +
-                        "Tócalas para revisarlas y corregirlas si hace falta.",
+                    text = "Se asignan solas y pueden equivocarse. Abre una categoría " +
+                        "para ver sus gastos y corregirlos.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 CategoriasExpandibles(
                     categorias = analisis.categorias,
+                    totalCents = analisis.resumen.totalCents,
                     onCorregir = onCorregir,
                 )
             }
@@ -261,7 +274,7 @@ private fun ContenidoAnalisis(
             item {
                 SinClasificarCard(
                     items = analisis.sinClasificar,
-                    onCorregir = onCorregir,
+                    onCorregir = { termino, nombre -> onCorregir(termino, nombre, null) },
                 )
             }
         }
@@ -375,99 +388,104 @@ private fun SeccionCard(
 @Composable
 private fun CategoriasExpandibles(
     categorias: List<CategoriaAnalisis>,
-    onCorregir: (termino: String, nombre: String) -> Unit,
+    totalCents: Long,
+    onCorregir: (termino: String, nombre: String, categoria: String?) -> Unit,
 ) {
     var expandidas by remember { mutableStateOf(setOf<String>()) }
     val maximo = (categorias.maxOfOrNull { it.totalCents } ?: 0L).coerceAtLeast(1L)
+    val total = totalCents.coerceAtLeast(1L)
 
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         categorias.forEach { categoria ->
             val abierta = categoria.categoria in expandidas
-            Column(Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .clickable {
-                            expandidas = if (abierta) {
-                                expandidas - categoria.categoria
-                            } else {
-                                expandidas + categoria.categoria
-                            }
-                        }
-                        .padding(vertical = 6.dp, horizontal = 2.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = categoria.nombre,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.weight(1f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = formatearPesos(categoria.totalCents),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Icon(
-                        imageVector = if (abierta) {
-                            Icons.Filled.KeyboardArrowUp
-                        } else {
-                            Icons.Filled.KeyboardArrowDown
-                        },
-                        contentDescription = if (abierta) "Contraer" else "Expandir",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+            val giro by animateFloatAsState(if (abierta) 180f else 0f, label = "giro")
+            val porcentaje = (categoria.totalCents * 100 / total).toInt()
 
-                Spacer(Modifier.height(4.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth((categoria.totalCents.toFloat() / maximo).coerceIn(0f, 1f))
-                            .fillMaxHeight()
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(MaterialTheme.colorScheme.primary),
-                    )
-                }
-
-                if (abierta) {
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = if (abierta) {
+                    MaterialTheme.colorScheme.surfaceContainer
+                } else {
+                    Color.Transparent
+                },
+                modifier = Modifier.animateContentSize(),
+            ) {
+                Column(Modifier.fillMaxWidth()) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = 8.dp, top = 4.dp),
+                            .clickable {
+                                expandidas = if (abierta) {
+                                    expandidas - categoria.categoria
+                                } else {
+                                    expandidas + categoria.categoria
+                                }
+                            }
+                            .padding(horizontal = 10.dp, vertical = 10.dp),
                     ) {
-                        categoria.ejemplos.forEach { ejemplo ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .clickable { onCorregir(ejemplo.termino, ejemplo.nombre) }
-                                    .padding(vertical = 4.dp, horizontal = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
                                 Text(
-                                    text = "• ${ejemplo.nombre}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.weight(1f),
+                                    text = categoria.nombre,
+                                    style = MaterialTheme.typography.titleSmall,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
-                                Spacer(Modifier.width(8.dp))
                                 Text(
-                                    text = formatearPesos(ejemplo.totalCents),
+                                    text = "${categoria.cantidad} " +
+                                        (if (categoria.cantidad == 1) "gasto" else "gastos") +
+                                        if (porcentaje < 1) " · menos del 1 %" else " · $porcentaje % del total",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = formatearPesos(categoria.totalCents),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            Icon(
+                                imageVector = Icons.Filled.KeyboardArrowDown,
+                                contentDescription = if (abierta) "Contraer" else "Ver gastos",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.rotate(giro),
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth((categoria.totalCents.toFloat() / maximo).coerceIn(0f, 1f))
+                                    .fillMaxHeight()
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary),
+                            )
+                        }
+                    }
+
+                    if (abierta) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            AvisoEditar()
+                            categoria.ejemplos.forEach { ejemplo ->
+                                FilaEjemplo(
+                                    nombre = ejemplo.nombre,
+                                    cantidad = ejemplo.cantidad,
+                                    totalCents = ejemplo.totalCents,
+                                    onClick = {
+                                        onCorregir(ejemplo.termino, ejemplo.nombre, categoria.nombre)
+                                    },
                                 )
                             }
                         }
@@ -479,15 +497,87 @@ private fun CategoriasExpandibles(
 }
 
 @Composable
+private fun AvisoEditar() {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(start = 4.dp, top = 2.dp, bottom = 2.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.TouchApp,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(16.dp),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = "Toca un gasto para cambiar su categoría",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
+@Composable
+private fun FilaEjemplo(
+    nombre: String,
+    cantidad: Int,
+    totalCents: Long,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 14.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = nombre.replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (cantidad > 1) {
+                    Text(
+                        text = "$cantidad veces",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = formatearPesos(totalCents),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.width(10.dp))
+            Icon(
+                imageVector = Icons.Outlined.Edit,
+                contentDescription = "Cambiar categoría",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+    }
+}
+
+@Composable
 private fun GusticosCard(
     analisis: Analisis,
-    onCorregir: (termino: String, nombre: String) -> Unit,
+    onCorregir: (termino: String, nombre: String, categoria: String?) -> Unit,
 ) {
     val totalCents = analisis.gustos.sumOf { it.totalCents }
     val cantidad = analisis.gustos.sumOf { it.cantidad }
     val items = analisis.gustos
-        .flatMap { it.ejemplos }
-        .sortedByDescending { it.totalCents }
+        .flatMap { gusto -> gusto.ejemplos.map { it to gusto.nombre } }
+        .sortedByDescending { it.first.totalCents }
 
     SeccionCard(titulo = "Tus gusticos") {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -504,30 +594,18 @@ private fun GusticosCard(
             if (items.isEmpty()) {
                 return@Column
             }
-            Column {
-                items.forEach { ejemplo ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(6.dp))
-                            .clickable { onCorregir(ejemplo.termino, ejemplo.nombre) }
-                            .padding(vertical = 5.dp, horizontal = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "• ${ejemplo.nombre}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = formatearPesos(ejemplo.totalCents),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+            Column(
+                modifier = Modifier.padding(top = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                AvisoEditar()
+                items.forEach { (ejemplo, categoria) ->
+                    FilaEjemplo(
+                        nombre = ejemplo.nombre,
+                        cantidad = ejemplo.cantidad,
+                        totalCents = ejemplo.totalCents,
+                        onClick = { onCorregir(ejemplo.termino, ejemplo.nombre, categoria) },
+                    )
                 }
             }
         }
@@ -538,6 +616,7 @@ private fun GusticosCard(
 @Composable
 private fun DialogoCorreccion(
     termino: String,
+    categoriaActual: String?,
     conceptos: List<Concepto>,
     guardando: Boolean,
     creandoCategoria: Boolean,
@@ -588,7 +667,9 @@ private fun DialogoCorreccion(
             Scaffold(
                 topBar = {
                     TopAppBar(
-                        title = { Text("¿Qué es?") },
+                        title = {
+                            Text(if (categoriaActual == null) "¿Qué es?" else "Cambiar categoría")
+                        },
                         navigationIcon = {
                             IconButton(onClick = onCancelar) {
                                 Icon(Icons.Filled.Close, contentDescription = "Cerrar")
@@ -645,23 +726,49 @@ private fun DialogoCorreccion(
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Text(
-                        text = termino,
-                        style = MaterialTheme.typography.titleLarge,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = "Se aplicará a todos los gastos que tengan ese nombre.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    TarjetaSuave(relleno = 16.dp) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = "GASTO",
+                                style = MaterialTheme.typography.labelMedium,
+                                letterSpacing = 0.8.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                text = termino.replaceFirstChar { it.uppercase() },
+                                style = MaterialTheme.typography.titleLarge,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            if (categoriaActual != null) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                ) {
+                                    Text(
+                                        text = "Ahora en: $categoriaActual",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    )
+                                }
+                            }
+                            Text(
+                                text = "Elige abajo dónde debe ir. El cambio se aplica a todos " +
+                                    "los gastos con este nombre.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
 
                     OutlinedTextField(
                         value = busqueda,
                         onValueChange = { busqueda = it },
-                        label = { Text("Buscar categoría") },
+                        placeholder = { Text("Buscar categoría") },
+                        leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
                         singleLine = true,
+                        shape = MaterialTheme.shapes.extraLarge,
                         modifier = Modifier.fillMaxWidth(),
                     )
 
