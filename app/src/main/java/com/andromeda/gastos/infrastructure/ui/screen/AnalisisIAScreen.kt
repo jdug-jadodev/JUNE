@@ -36,6 +36,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.AutoAwesome
@@ -50,6 +51,7 @@ import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Remove
+import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -634,6 +636,24 @@ private fun LoQueAnalice(
                     ),
                 )
             }
+        }
+        if (analisis.margenLibreCents > 0) {
+            add(
+                DatoAnalizado(
+                    Icons.Outlined.Savings,
+                    "Queda tras los fijos",
+                    formatearPesos(analisis.margenLibreCents),
+                ),
+            )
+        }
+        if (analisis.salariosMinimos > 0) {
+            add(
+                DatoAnalizado(
+                    Icons.Outlined.AccountBalance,
+                    "Nivel de ingreso",
+                    "${analisis.salariosMinimos} salarios mínimos",
+                ),
+            )
         }
         if (analisis.sugerencias.isNotEmpty()) {
             add(

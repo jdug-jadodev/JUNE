@@ -17,6 +17,8 @@ import com.andromeda.gastos.infrastructure.ui.components.EstadoVacio
 import com.andromeda.gastos.infrastructure.ui.components.TarjetaSuave
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -65,6 +67,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.andromeda.gastos.AppContainer
 import com.andromeda.gastos.domain.entity.Ingreso
 import com.andromeda.gastos.domain.entity.Periodicidad
+import com.andromeda.gastos.domain.entity.equivalenteMensualCents
 import com.andromeda.gastos.domain.util.MontoParser
 import com.andromeda.gastos.domain.util.formatearMonto
 import com.andromeda.gastos.infrastructure.ui.viewmodel.IngresosViewModel
@@ -139,7 +142,8 @@ fun IngresosScreen(
                     titulo = "Ingresos del hogar",
                     icono = Icons.Outlined.AccountBalanceWallet,
                     descripcion = if (ajustes.esAdmin) {
-                        "La IA los usa para comparar tus gastos contra lo que entra."
+                        "La IA los usa para comparar tus gastos contra lo que entra. " +
+                            "También puedes registrar ingresos semanales o diarios."
                     } else {
                         null
                     },
@@ -294,6 +298,11 @@ private fun FilaIngreso(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Text(
+                    text = "≈ ${formatearMonto(ingreso.equivalenteMensualCents())} al mes",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
             IconButton(onClick = onEditar) {
                 Icon(
@@ -315,6 +324,7 @@ private fun FilaIngreso(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DialogoIngreso(
     ingreso: Ingreso?,
@@ -364,6 +374,9 @@ private fun DialogoIngreso(
                     supportingText = {
                         if (montoCents != null) {
                             Text(formatearMonto(montoCents))
+                            Text(
+                                "≈ ${formatearMonto(equivalenteMensualCents(montoCents, periodicidad))} al mes",
+                            )
                         } else {
                             Text("Ej. 2.000.000 o 2 millones")
                         }
@@ -371,8 +384,8 @@ private fun DialogoIngreso(
                     modifier = Modifier.fillMaxWidth(),
                 )
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Periodicidad.values().forEach { opcion ->
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Periodicidad.entries.forEach { opcion ->
                         FilterChip(
                             selected = periodicidad == opcion,
                             onClick = { periodicidad = opcion },

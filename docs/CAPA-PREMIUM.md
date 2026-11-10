@@ -101,14 +101,44 @@ Pedir "cuántos niños, cuántos integrantes, cuánto cuesta vivir" es intrusivo
 
 | Señal | De dónde sale |
 |---|---|
-| Personas del hogar | integrantes registrados + mercado mensual estimado por persona |
+| Personas del hogar | integrantes registrados + mercado mensual estimado por persona (el per cápita de mercado baja cuando el ingreso es bajo) |
 | Niños / adolescentes | gastos de colegio, útiles, universidad, mesada, pañales, jardín |
 | Mascotas | categoría de mascotas con gasto |
 | Costo de vida | % del ingreso que se va en gastos fijos |
 | Deudas | categoría "Deudas y pagos" del ciclo, como % del ingreso |
-| Capacidad discrecional | % del ingreso disponible para gustos, ocio, restaurantes y ropa |
+| Nivel de ingreso | ingreso mensual ÷ salario mínimo legal (SMMLV 2026 = $1.750.905) |
+| Margen libre | ingreso − gastos fijos del ciclo (arriendo, servicios, deudas) |
 
-Los **montos sugeridos los calcula el backend**, no la IA. Parte de valores austeros por persona (gusticos $25.000/semana, ocio $35.000/semana, restaurantes $30.000/semana, ropa $60.000/mes) y recorta todo el bloque discrecional a un **6–14% del ingreso** según la carga fija y las deudas. En un hogar con deudas altas, la ropa de seis personas queda en cientos de miles de pesos, no en más de un millón. La IA solo redacta el estado, las notas y la recomendación; además recibe el dato de deudas para priorizar lo esencial.
+#### 6.1.1 Cómo salen los montos sugeridos (implementado)
+
+Los **montos sugeridos los calcula el backend**, no la IA. El cálculo tiene tres pasos:
+
+1. **Nivel de ingreso** a partir del SMMLV 2026 ($1.750.905):
+   `MUY_BAJO` (< 1,5 SM) · `BAJO` (1,5–3) · `MEDIO` (3–6) · `ALTO` (> 6).
+2. **Ancla por persona** según ese nivel (gusticos, ocio, restaurantes por semana y ropa al mes).
+   Por ejemplo, en nivel `ALTO`: $20.000 + $25.000 + $20.000 por semana y $45.000 al mes de ropa por persona.
+3. **Techo de lo que el hogar puede gastar**: el bloque discrecional nunca supera
+   - el ancla total por personas,
+   - un % del ingreso (8%–18% según nivel),
+   - ni un % del margen libre que queda tras los gastos fijos (8%–18%).
+
+El resultado se reparte 25% gusticos / 30% salidas y ocio / 25% restaurantes / 20% ropa y se redondea a cifras usables ($1.000, $5.000 o $10.000 según el tamaño).
+
+Ejemplos del modelo:
+
+| Hogar | Resultado |
+|---|---|
+| 2 salarios mínimos, 3 hijos (5 personas) | gusticos ~$18.000/sem, ocio ~$20.000/sem, restaurantes ~$18.000/sem, ropa ~$60.000/mes |
+| Ingreso informal de $45.000 al día (3 personas) | gusticos $5.000/sem, ocio $6.000/sem, restaurantes $5.000/sem, ropa $18.000/mes |
+| Ingresos que no alcanzan ni los gastos fijos | montos en $0 y la nota "sin margen extra este mes: lo esencial y las deudas van primero" |
+
+Si no hay ingresos registrados, se usa el ancla de nivel medio como referencia genérica.
+
+La IA solo redacta el estado, las notas y la recomendación; recibe el nivel de ingreso, el margen libre y las deudas para poder priorizar lo esencial.
+
+#### 6.1.2 Ingresos por día o por semana
+
+Los ingresos se pueden registrar como **mensuales, quincenales, semanales o diarios**. El backend convierte todo a su equivalente mensual (quincenal ×2, semanal ×52/12, diario ×30) para comparar con los gastos del ciclo. Cuando hay ingresos por día o por semana, el análisis avisa que el monto es un promedio porque puede variar.
 
 La persona puede **ajustar el número de integrantes** desde la pantalla de análisis. Ese valor:
 
