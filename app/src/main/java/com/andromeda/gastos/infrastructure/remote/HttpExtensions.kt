@@ -12,7 +12,11 @@ import io.ktor.http.isSuccess
 suspend fun HttpResponse.verificar() {
     if (!status.isSuccess()) {
         val mensaje = runCatching { body<ErrorDto>().message }.getOrNull()
-        throw AppException(mensaje ?: "Error ${status.value}")
+        val autenticada = call.request.headers[HttpHeaders.Authorization] != null
+        if (status.value == 401 && autenticada) {
+            SesionExpiradaBus.notificar()
+        }
+        throw AppException(mensaje ?: "Error ${status.value}", status.value)
     }
 }
 

@@ -7,4 +7,10 @@ interface AutenticacionPort {
     suspend fun login(email: String, password: String): Sesion
     suspend fun logout()
     suspend fun sesionActual(): Sesion?
+
+    /**
+     * Sesión lista para usar, renovando el token de acceso si es posible.
+     * Devuelve null cuando no hay sesión o el backend la rechazó.
+     */
+    suspend fun sesionValida(): Sesion?
 }
